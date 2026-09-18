@@ -9,7 +9,7 @@
     --accent-glow: rgba(88, 166, 255, 0.4);
     --text-primary: #f0f6fc;
     --text-secondary: #8b949e;
-    --font-mono: "SF Mono", "Fira Code", "Roboto Mono", Consolas, Menlo, monospace;
+    --font-mono: "SF Mono", "Fira Code", "Roboto Mono", Consolas, Menlo, "PingFang TC", "Microsoft JhengHei", monospace, sans-serif;
 }
 
 * {
@@ -213,19 +213,38 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 46px;
-    height: 46px;
-    border-radius: 8px;
-    background: rgba(22, 27, 34, 0.85);
-    border: 1.5px solid var(--accent-cyan);
-    box-shadow: 0 0 12px rgba(88, 166, 255, 0.25);
+    width: 50px;
+    height: 50px;
+    border-radius: 9px;
+    background: rgba(22, 27, 34, 0.9);
+    border: 2px solid var(--accent-cyan);
+    box-shadow: 0 0 14px rgba(88, 166, 255, 0.35);
     backdrop-filter: blur(4px);
-    font-size: 1.35rem;
-    font-weight: 700;
+    font-size: 1.6rem;
+    font-weight: 800;
     color: #fff;
     transform: translate(-50%, -50%);
     transition: border-color 0.15s;
     z-index: 3;
+}
+
+.target-node .char-glyph {
+    line-height: 1;
+}
+
+/* 難辨符號輔助文字標籤（無障礙標記） */
+.target-node .symbol-subtag {
+    display: none;
+    font-size: 0.65rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-top: 2px;
+    color: var(--accent-yellow);
+    background: rgba(13, 17, 23, 0.9);
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(210, 153, 34, 0.5);
+    letter-spacing: 0.5px;
 }
 
 .target-node.highlight {
@@ -770,6 +789,33 @@ body {
     box-shadow: 0 0 20px var(--accent-yellow) !important;
 }
 
+/* 長輩與無障礙大字開關按鈕 */
+.a11y-hud-panel {
+    display: flex;
+    align-items: center;
+}
+
+.a11y-toggle-button {
+    background: #161b22;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.a11y-toggle-button:hover {
+    border-color: var(--accent-yellow);
+    color: var(--text-primary);
+}
+
 /* 底部雷達區域 */
 .ai-radar-section {
     display: flex;
@@ -846,9 +892,9 @@ body {
     border-radius: 4px;
     color: #c9d1d9;
     font-family: var(--font-mono);
-    font-size: 0.72rem;
+    font-size: 0.88rem;
     font-weight: 700;
-    height: 28px;
+    height: 32px;
     flex: 1;
     min-width: 26px;
     display: flex;
@@ -871,11 +917,11 @@ body {
 .vkey-wide { flex: 1.5; }
 .vkey-wider { flex: 1.8; }
 .vkey-widest { flex: 2.2; }
-.vkey-space { flex: 6; letter-spacing: 1px; font-size: 0.68rem; color: var(--text-secondary); }
+.vkey-space { flex: 6; letter-spacing: 1px; font-size: 0.78rem; color: var(--text-secondary); }
 
 /* 鍵位內部字符標記 */
-.vkey-main { font-size: 0.72rem; }
-.vkey-sub { font-size: 0.58rem; color: var(--text-secondary); opacity: 0.85; margin-bottom: 1px; }
+.vkey-main { font-size: 0.88rem; font-weight: 700; }
+.vkey-sub { font-size: 0.72rem; font-weight: 700; color: #8b949e; opacity: 0.95; margin-bottom: 1px; }
 
 /* AI 視線凝視 (AI Gaze) 狀態 */
 .vkey.vkey-gazed {
@@ -992,6 +1038,139 @@ body {
     .hud-value {
         font-size: 1rem;
     }
+}
+
+/* ==========================================
+   長輩與無障礙大字模式 (ACCESSIBILITY BIG FONT MODE)
+   ========================================== */
+.a11y-mode {
+    --bg-color: #05070a;
+    --panel-bg: #111620;
+    --border-color: #4a5568;
+    --text-primary: #ffffff;
+    --text-secondary: #a0aec0;
+}
+
+.a11y-mode #game-container {
+    border-width: 2px;
+    border-color: #58a6ff;
+}
+
+/* 頂部 HUD 大字化 */
+.a11y-mode .hud-label {
+    font-size: 0.92rem;
+    font-weight: 800;
+}
+
+.a11y-mode .hud-value {
+    font-size: 1.65rem;
+    font-weight: 900;
+}
+
+.a11y-mode .a11y-toggle-button {
+    background: rgba(210, 153, 34, 0.25) !important;
+    border-color: var(--accent-yellow) !important;
+    color: #ffdd57 !important;
+    box-shadow: 0 0 12px rgba(210, 153, 34, 0.5) !important;
+}
+
+.a11y-mode .a11y-toggle-button #a11y-status-label {
+    color: #ffdd57 !important;
+}
+
+/* 目標大字化與易辨標籤 (Target Node Enlargement) */
+.a11y-mode .target-node {
+    width: 64px;
+    height: 64px;
+    font-size: 2.3rem;
+    font-weight: 900;
+    border-width: 2.5px;
+    box-shadow: 0 0 20px rgba(88, 166, 255, 0.6), inset 0 0 8px rgba(88, 166, 255, 0.25);
+    background: rgba(13, 17, 23, 0.95);
+}
+
+.a11y-mode .target-node.char-upper {
+    color: #bfe3ff;
+    border-color: #79c0ff;
+}
+
+.a11y-mode .target-node.char-symbol {
+    color: #ffa198;
+    border-color: #ff7b72;
+    box-shadow: 0 0 20px rgba(248, 81, 73, 0.6);
+}
+
+.a11y-mode .target-node.char-number {
+    color: #aff5b4;
+    border-color: #56d364;
+}
+
+.a11y-mode .target-node .symbol-subtag {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 900;
+}
+
+/* 虛擬鍵盤全面放大與高對比 */
+.a11y-mode #keyboard-dock {
+    padding: 8px 12px;
+}
+
+.a11y-mode .vkey {
+    height: 38px;
+    min-width: 32px;
+    border-width: 1.5px;
+}
+
+.a11y-mode .vkey-main {
+    font-size: 1.05rem;
+    font-weight: 900;
+}
+
+.a11y-mode .vkey-sub {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #ffdd57;
+    opacity: 1;
+}
+
+.a11y-mode .vkey-space {
+    font-size: 0.88rem;
+    font-weight: 800;
+}
+
+/* 底部按鍵資訊與說明大字 */
+.a11y-mode #input-hud {
+    font-size: 0.95rem;
+    padding: 8px 18px;
+}
+
+.a11y-mode #input-hud .key-box {
+    font-size: 1.35rem;
+    min-width: 38px;
+    height: 34px;
+    line-height: 34px;
+    font-weight: 900;
+}
+
+.a11y-mode #input-hud .ai-decision-ticker {
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.a11y-mode #input-hud .hint {
+    font-size: 0.85rem;
+    color: #f0f6fc;
+}
+
+.a11y-mode .modal {
+    font-size: 1.05rem;
+    max-width: 600px;
+}
+
+.a11y-mode .instructions p {
+    font-size: 1rem;
+    line-height: 1.6;
 }
 
 

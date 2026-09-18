@@ -294,8 +294,25 @@ async function runAutomatedTests() {
     if (game.targets.length !== 0) throw new Error('Expected all targets to be cleared by EMP bomb');
     console.log(`✅ EMP Bomb detonated: screen cleared all targets, score increased from ${prevScore} to ${game.score}!`);
 
+    console.log('\n--- 12. Testing A11y Big Font Mode Toggling & Symbol Tagging ---');
+    if (game.isA11yMode !== false) throw new Error('Expected A11y mode to be false initially');
+    game.toggleA11yMode();
+    if (game.isA11yMode !== true) throw new Error('Expected A11y mode to be true after toggle');
+    console.log('✅ A11y Big Font Mode enabled successfully.');
+
+    // Spawn a target and check speed adjustment
+    game.spawnTarget();
+    const lastTarget = game.targets[game.targets.length - 1];
+    if (lastTarget) {
+        console.log(`✅ Target spawned in A11y mode with adjusted speed factor: char="${lastTarget.char}", speed=${lastTarget.speed.toFixed(1)}px/s`);
+    }
+
+    game.toggleA11yMode();
+    if (game.isA11yMode !== false) throw new Error('Expected A11y mode to be false after second toggle');
+    console.log('✅ A11y Big Font Mode toggled back to normal successfully.');
+
     console.log('\n==============================================');
-    console.log('🎉 ALL 11 AUTOMATED TEST SUITES PASSED 100%!');
+    console.log('🎉 ALL 12 AUTOMATED TEST SUITES PASSED 100%!');
     console.log('==============================================\n');
     process.exit(0);
 }

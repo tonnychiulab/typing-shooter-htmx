@@ -22,6 +22,38 @@ const ALL_CHARS = [
     ...CHAR_SETS.symbols
 ];
 
+// 難辨符號長輩與無障礙中文易辨標籤對照表
+const SYMBOL_ANNOTATIONS = {
+    '.': '句點',
+    ',': '逗號',
+    ':': '冒號',
+    ';': '分號',
+    "'": '單引',
+    '"': '雙引',
+    '`': '反引',
+    '~': '波浪',
+    '!': '驚嘆',
+    '?': '問號',
+    '-': '減號',
+    '_': '底線',
+    '=': '等於',
+    '+': '加號',
+    '[': '中括',
+    ']': '中括',
+    '{': '大括',
+    '}': '大括',
+    '/': '斜線',
+    '\\': '反斜',
+    '|': '豎線',
+    '@': '老鼠',
+    '#': '井字',
+    '$': '金錢',
+    '%': '百分',
+    '^': '次方',
+    '&': 'AND',
+    '*': '星號'
+};
+
 // ==========================================
 // AI 模型設定（不同級別的反應速度、準確率與思考頻率）
 // ==========================================
@@ -119,6 +151,10 @@ class TypingGame {
         this.bombSlot1 = document.getElementById('bomb-slot-1');
         this.bombSlot2 = document.getElementById('bomb-slot-2');
         this.bombHint = document.getElementById('bomb-hint');
+        this.a11yToggleBtn = document.getElementById('a11y-toggle-btn');
+        this.a11yStatusLabel = document.getElementById('a11y-status-label');
+        this.modalA11yBtn = document.getElementById('modal-a11y-toggle-btn');
+        this.modalA11yLabel = document.getElementById('modal-a11y-label');
         this.spaceKeyElement = null;
 
         // 武器與 EMP 核彈大招系統 (每 60 分充能 1 發，最多 2 發)
@@ -127,11 +163,15 @@ class TypingGame {
         this.bombScoreMilestone = 60;
         this.lastBombScoreThreshold = 0;
 
+        // 長輩與無障礙大字模式
+        this.isA11yMode = false;
+
         // 建立虛擬鍵盤與字元快取對映表
         this.charToKeyMap = new Map();
         this.shiftKeyElements = [];
         this.buildVirtualKeyboard();
         this.updateBombUI();
+        this.initA11yMode();
 
         // AI 駕駛狀態
         this.isAiPilot = false;
@@ -303,6 +343,14 @@ class TypingGame {
             });
         }
 
+        // 長輩與無障礙大字切換監聽
+        if (this.a11yToggleBtn) {
+            this.a11yToggleBtn.addEventListener('click', () => this.toggleA11yMode());
+        }
+        if (this.modalA11yBtn) {
+            this.modalA11yBtn.addEventListener('click', () => this.toggleA11yMode());
+        }
+
         window.addEventListener('keydown', (e) => {
             // Tab 鍵：無縫切換 AI 接管 / 玩家手動駕駛
             if (e.key === 'Tab') {
@@ -413,14 +461,16 @@ class TypingGame {
         const el = document.createElement('div');
         el.id = targetId;
         el.className = `target-node ${charType}`;
-        el.textContent = char;
+        const subtagHtml = SYMBOL_ANNOTATIONS[char] ? `<span class="symbol-subtag">${SYMBOL_ANNOTATIONS[char]}</span>` : '';
+        el.innerHTML = `<span class="char-glyph">${char}</span>${subtagHtml}`;
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
 
         this.targetsContainer.appendChild(el);
 
-        // 速度隨得分遞增（難度曲線）
-        const speed = this.baseSpeed + Math.min(this.score / 80, 80);
+        // 速度隨得分遞增（無障礙模式下提供 15% 溫和微調，體貼長輩動態視力反應時間）
+        const a11yFactor = this.isA11yMode ? 0.85 : 1.0;
+        const speed = (this.baseSpeed + Math.min(this.score / 80, 80)) * a11yFactor;
 
         this.targets.push({
             id: targetId,
@@ -876,6 +926,49 @@ class TypingGame {
         this.stopAiLoop();
         const model = AI_MODELS[this.currentAiModelKey] || AI_MODELS.veteran;
         this.aiTimer = setInterval(() => this.aiThinkAndAct(), model.scanInterval);
+    }
+
+    // ==========================================
+    // 長輩與無障礙大字系統 (A11Y BIG FONT SYSTEM)
+    // ==========================================
+    initA11yMode() {
+        try {
+            if (typeof localStorage !== 'undefined') {
+                const saved = localStorage.getItem('TYPING_A11Y_MODE');
+                if (saved === 'true') {
+                    this.setA11yMode(true);
+                }
+            }
+        } catch (e) {}
+    }
+
+    toggleA11yMode() {
+        this.setA11yMode(!this.isA11yMode);
+    }
+
+    setA11yMode(enabled) {
+        this.isA11yMode = enabled;
+        const container = document.getElementById('game-container') || (typeof document !== 'undefined' ? document.body : null);
+        if (container) {
+            if (enabled) {
+                container.classList.add('a11y-mode');
+            } else {
+                container.classList.remove('a11y-mode');
+            }
+        }
+        if (this.a11yStatusLabel) {
+            this.a11yStatusLabel.textContent = enabled ? 'ON' : 'OFF';
+            this.a11yStatusLabel.style.color = enabled ? 'var(--accent-yellow)' : '';
+        }
+        if (this.modalA11yLabel) {
+            this.modalA11yLabel.textContent = enabled ? 'ON' : 'OFF';
+            this.modalA11yLabel.style.color = enabled ? 'var(--accent-yellow)' : '';
+        }
+        try {
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('TYPING_A11Y_MODE', enabled ? 'true' : 'false');
+            }
+        } catch (e) {}
     }
 
     // ==========================================
