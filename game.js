@@ -259,8 +259,8 @@ class TypingGame {
                 return;
             }
 
-            // 忽略功能鍵 (Shift, Alt, Ctrl, Meta 等單獨按下)
-            if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Escape'].includes(e.key)) {
+            // 忽略功能鍵與輸入法暫態鍵 (Shift, Alt, Ctrl, Meta, IME Process 等)
+            if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Escape', 'Process', 'Unidentified', 'Dead'].includes(e.key)) {
                 return;
             }
 

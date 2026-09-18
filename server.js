@@ -111,9 +111,21 @@ const MIME_TYPES = {
     '.svg': 'image/svg+xml'
 };
 
+// 允許被存取的靜態檔案白名單（防止存取 server.js, scores.json, .git 等敏感檔案）
+const ALLOWED_STATIC_FILES = new Set([
+    '/index.html',
+    '/style.css',
+    '/game.js',
+    '/favicon.ico'
+]);
+
+// 簡易防刷防洪機制 (每個 IP 1.5 秒內限送 1 次戰績)
+const recentSubmissions = new Map();
+
 const server = http.createServer((req, res) => {
     const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
     const pathname = parsedUrl.pathname;
+    const clientIp = req.socket?.remoteAddress || req.headers['x-forwarded-for'] || '127.0.0.1';
 
     // API: 取得排行榜 HTML
     if (req.method === 'GET' && pathname === '/api/leaderboard') {
@@ -128,14 +140,23 @@ const server = http.createServer((req, res) => {
 
     // API: 提交新分數
     if (req.method === 'POST' && pathname === '/api/score') {
+        // 防刷頻檢查
+        const now = Date.now();
+        const lastTime = recentSubmissions.get(clientIp) || 0;
+        if (now - lastTime < 1200) {
+            res.writeHead(429, { 'Content-Type': 'text/html; charset=utf-8' });
+            return res.end('<p style="color: var(--accent-red); padding: 10px;">⚠️ 提交過於頻繁，請稍後再試</p>');
+        }
+        recentSubmissions.set(clientIp, now);
+
         let body = '';
         req.on('data', chunk => {
             body += chunk;
-            if (body.length > 1e6) req.destroy(); // 防範過大 payload
+            if (body.length > 50000) req.destroy(); // 嚴格限制 payload 50KB
         });
 
         req.on('end', () => {
-            let name = 'ROOKIE';
+            let rawName = 'ROOKIE';
             let score = 0;
             let maxCombo = 0;
             let accuracy = 100;
@@ -143,39 +164,51 @@ const server = http.createServer((req, res) => {
             if (req.headers['content-type']?.includes('application/json')) {
                 try {
                     const data = JSON.parse(body);
-                    name = data.name || name;
+                    rawName = String(data.name || '');
                     score = parseInt(data.score, 10) || 0;
                     maxCombo = parseInt(data.maxCombo, 10) || 0;
                     accuracy = parseInt(data.accuracy, 10) || 0;
                 } catch (e) {
-                    console.error('Error parsing JSON score body:', e);
+                    // JSON 解析錯誤時保留預設值
                 }
             } else {
-                // HTMX 預設以 x-www-form-urlencoded 提交 form
                 const params = new URLSearchParams(body);
-                name = params.get('name') || name;
+                rawName = params.get('name') || '';
                 score = parseInt(params.get('score'), 10) || 0;
                 maxCombo = parseInt(params.get('maxCombo'), 10) || 0;
                 accuracy = parseInt(params.get('accuracy'), 10) || 0;
             }
 
-            // 清理輸入
-            name = name.trim().slice(0, 20).toUpperCase() || 'ANONYMOUS';
+            // 嚴格過濾與白名單校驗：
+            // 1. 暱稱：僅允許英數、底線、減號與空格，最多 16 碼，移除所有潛在危險字元
+            const sanitizedName = rawName.toUpperCase().replace(/[^A-Z0-9_ -]/g, '').trim().slice(0, 16) || 'ANONYMOUS';
+
+            // 2. 數值範圍合理性保護（防止作弊直接送出百億異常值）
+            const safeScore = Math.min(500000, Math.max(0, score));
+            const safeCombo = Math.min(5000, Math.max(0, maxCombo));
+            const safeAccuracy = Math.min(100, Math.max(0, accuracy));
+
             const newId = `rec-${Date.now()}`;
             const newRecord = {
                 id: newId,
-                name: name,
-                score: Math.max(0, score),
-                maxCombo: Math.max(0, maxCombo),
-                accuracy: Math.min(100, Math.max(0, accuracy)),
+                name: sanitizedName,
+                score: safeScore,
+                maxCombo: safeCombo,
+                accuracy: safeAccuracy,
                 date: new Date().toISOString().split('T')[0]
             };
 
-            const scores = loadScores();
+            let scores = loadScores();
             scores.push(newRecord);
+            scores.sort((a, b) => b.score - a.score || b.accuracy - a.accuracy);
+
+            // 限制最多儲存 Top 100 筆，防止硬碟空間與記憶體遭 DoS 膨脹
+            if (scores.length > 100) {
+                scores = scores.slice(0, 100);
+            }
             saveScores(scores);
 
-            // 直接回傳最新包含高亮的排行榜 HTML 片段，由 HTMX 直接 swap 置換
+            // 直接回傳最新包含高亮的排行榜 HTML 片段
             const html = renderLeaderboardHtml(scores, newId);
             res.writeHead(200, {
                 'Content-Type': 'text/html; charset=utf-8',
@@ -186,15 +219,16 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // 靜態檔案伺服
-    let filePath = pathname === '/' ? '/index.html' : pathname;
-    const safePath = path.normalize(path.join(__dirname, filePath));
+    // 靜態檔案伺服安全控管：路徑對齊
+    let reqPath = pathname === '/' ? '/index.html' : pathname;
 
-    // 安全檢查避免路徑遍歷
-    if (!safePath.startsWith(__dirname)) {
-        res.writeHead(403);
-        return res.end('Forbidden');
+    // 封鎖所有隱藏檔案（如 .git, .env 等）與非白名單檔案
+    if (!ALLOWED_STATIC_FILES.has(reqPath)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+        return res.end('403 Forbidden: Access restricted to public assets.');
     }
+
+    const safePath = path.join(__dirname, reqPath);
 
     fs.readFile(safePath, (err, data) => {
         if (err) {
@@ -204,7 +238,11 @@ const server = http.createServer((req, res) => {
 
         const ext = path.extname(safePath).toLowerCase();
         const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-        res.writeHead(200, { 'Content-Type': contentType });
+        res.writeHead(200, {
+            'Content-Type': contentType,
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'DENY'
+        });
         res.end(data);
     });
 });

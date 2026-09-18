@@ -839,4 +839,32 @@ body {
     box-shadow: 0 0 8px rgba(248, 81, 73, 0.7);
 }
 
+/* 行動裝置與小螢幕自適應 */
+@media (max-width: 768px) {
+    #virtual-keyboard {
+        gap: 2px;
+    }
+    .keyboard-row {
+        gap: 2px;
+    }
+    .vkey {
+        min-width: 18px;
+        height: 24px;
+        font-size: 0.62rem;
+    }
+    .vkey-sub {
+        display: none;
+    }
+    .vkey-space {
+        font-size: 0.58rem;
+    }
+    #hud {
+        padding: 8px 12px;
+    }
+    .hud-value {
+        font-size: 1rem;
+    }
+}
+
+
 
