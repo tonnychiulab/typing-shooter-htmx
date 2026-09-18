@@ -311,8 +311,38 @@ async function runAutomatedTests() {
     if (game.isA11yMode !== false) throw new Error('Expected A11y mode to be false after second toggle');
     console.log('✅ A11y Big Font Mode toggled back to normal successfully.');
 
+    console.log('\n--- 13. Testing 3 Starter Treasures for Seniors (A11y Mode) ---');
+    game.setA11yMode(true);
+    game.startGame();
+    
+    // Treasure 1: 3 EMP Bombs
+    if (game.bombs !== 3) throw new Error(`Expected 3 starter EMP bombs, got ${game.bombs}`);
+    if (game.maxBombs !== 3) throw new Error(`Expected maxBombs=3 in A11y mode, got ${game.maxBombs}`);
+    console.log('✅ Starter Treasure 1 Verified: 3 full EMP Bombs loaded at start.');
+
+    // Treasure 2: 3 Shields absorbing damage
+    if (game.shields !== 3) throw new Error(`Expected 3 shields, got ${game.shields}`);
+    console.log('✅ Starter Treasure 2 Verified: 3 Shields granted.');
+
+    const mockTarget = { id: 'test-shield', char: 'k', x: 200, y: 560, speed: 50, element: new MockElement('div') };
+    game.targets.push(mockTarget);
+    game.handleTargetBreach(mockTarget, 0);
+    if (game.shields !== 2) throw new Error(`Expected shields to drop to 2, got ${game.shields}`);
+    if (game.health !== 100) throw new Error(`Expected health to remain 100, got ${game.health}`);
+    console.log('✅ Shield absorbed breach damage with zero HP loss!');
+
+    // Treasure 3: Key Guide Light (for human manual pilot)
+    game.isAiPilot = false;
+    const guideTarget = { id: 'test-guide', char: 'a', x: 200, y: 300, speed: 50, element: new MockElement('div') };
+    game.targets.push(guideTarget);
+    game.updateKeyGuideLight();
+    if (game.currentGuidedChar !== 'a') throw new Error(`Expected guided char to be 'a', got ${game.currentGuidedChar}`);
+    console.log('✅ Starter Treasure 3 Verified: Keyfinder Guide Light dynamically tracking urgent target [a].');
+
+    game.setA11yMode(false);
+
     console.log('\n==============================================');
-    console.log('🎉 ALL 12 AUTOMATED TEST SUITES PASSED 100%!');
+    console.log('🎉 ALL 13 AUTOMATED TEST SUITES PASSED 100%!');
     console.log('==============================================\n');
     process.exit(0);
 }

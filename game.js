@@ -150,21 +150,27 @@ class TypingGame {
         this.aiGazeReticle = document.getElementById('ai-gaze-reticle');
         this.bombSlot1 = document.getElementById('bomb-slot-1');
         this.bombSlot2 = document.getElementById('bomb-slot-2');
+        this.bombSlot3 = document.getElementById('bomb-slot-3');
         this.bombHint = document.getElementById('bomb-hint');
+        this.shieldContainer = document.getElementById('shield-container');
+        this.shieldDisplay = document.getElementById('shield-display');
         this.a11yToggleBtn = document.getElementById('a11y-toggle-btn');
         this.a11yStatusLabel = document.getElementById('a11y-status-label');
         this.modalA11yBtn = document.getElementById('modal-a11y-toggle-btn');
         this.modalA11yLabel = document.getElementById('modal-a11y-label');
         this.spaceKeyElement = null;
 
-        // 武器與 EMP 核彈大招系統 (每 60 分充能 1 發，最多 2 發)
+        // 武器與 EMP 核彈大招系統
         this.bombs = 0;
         this.maxBombs = 2;
         this.bombScoreMilestone = 60;
         this.lastBombScoreThreshold = 0;
 
-        // 長輩與無障礙大字模式
+        // 長輩與無障礙三大守護寶物系統 (核彈x3, 免死護盾x3, 按鍵導引燈)
         this.isA11yMode = false;
+        this.shields = 0;
+        this.maxShields = 3;
+        this.currentGuidedChar = null;
 
         // 建立虛擬鍵盤與字元快取對映表
         this.charToKeyMap = new Map();
@@ -321,6 +327,38 @@ class TypingGame {
         } catch (e) {}
     }
 
+    playShieldBlockSound() {
+        if (!this.audioCtx) return;
+        try {
+            if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+            const now = this.audioCtx.currentTime;
+            // 清脆金屬護盾格擋嗡鳴音 (700Hz -> 1200Hz 雙音和弦)
+            const osc1 = this.audioCtx.createOscillator();
+            const osc2 = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(587.33, now); // D5
+            osc1.frequency.exponentialRampToValueAtTime(880, now + 0.25); // A5
+
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(880, now);
+            osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.25); // D6
+
+            gain.gain.setValueAtTime(0.35, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(this.audioCtx.destination);
+
+            osc1.start(now);
+            osc2.start(now);
+            osc1.stop(now + 0.3);
+            osc2.stop(now + 0.3);
+        } catch (e) {}
+    }
+
     bindEvents() {
         this.startBtn.addEventListener('click', () => this.startGame());
 
@@ -405,9 +443,27 @@ class TypingGame {
         this.health = 100;
         this.hits = 0;
         this.misses = 0;
-        this.bombs = 0;
+
+        // 長輩無障礙三大守護寶物：開局滿裝 3 枚核彈 + 3 層免死護盾
+        if (this.isA11yMode) {
+            this.maxBombs = 3;
+            this.bombs = 3;
+            this.shields = 3;
+            if (this.shieldContainer) this.shieldContainer.style.display = 'flex';
+            if (this.bombSlot3) this.bombSlot3.style.display = 'inline-flex';
+        } else {
+            this.maxBombs = 2;
+            this.bombs = 0;
+            this.shields = 0;
+            if (this.shieldContainer) this.shieldContainer.style.display = 'none';
+            if (this.bombSlot3) this.bombSlot3.style.display = 'none';
+        }
+
         this.lastBombScoreThreshold = 0;
         this.updateBombUI();
+        this.updateShieldUI();
+        this.clearKeyGuideLight();
+
         this.targets = [];
         this.targetsContainer.innerHTML = '';
         this.fxLayer.innerHTML = '';
@@ -502,6 +558,9 @@ class TypingGame {
             }
         }
 
+        // 長輩守護寶物三：虛擬鍵盤智慧按鍵指引光
+        this.updateKeyGuideLight();
+
         requestAnimationFrame((time) => this.gameLoop(time));
     }
 
@@ -573,6 +632,39 @@ class TypingGame {
         // 目標觸底造成防線受損
         target.element.remove();
         this.targets.splice(index, 1);
+
+        // 長輩守護寶物二：護盾吸收傷害（前 3 次免死）
+        if (this.shields > 0) {
+            this.shields--;
+            this.updateShieldUI();
+            this.playShieldBlockSound();
+
+            // 護盾綠光格擋動畫
+            if (this.battlefield) {
+                const shieldFlash = document.createElement('div');
+                shieldFlash.className = 'shield-block-flash';
+                this.battlefield.appendChild(shieldFlash);
+                setTimeout(() => shieldFlash.remove(), 400);
+            }
+
+            if (this.aiDecisionDisplay) {
+                const oldText = this.aiDecisionDisplay.textContent;
+                this.aiDecisionDisplay.textContent = `🛡️ SHIELD ABSORBED DAMAGE! (${this.shields} LEFT)`;
+                this.aiDecisionDisplay.style.color = 'var(--accent-green)';
+                setTimeout(() => {
+                    if (this.aiDecisionDisplay) {
+                        this.aiDecisionDisplay.style.color = '';
+                        if (this.aiDecisionDisplay.textContent.includes('SHIELD')) {
+                            this.aiDecisionDisplay.textContent = oldText;
+                        }
+                    }
+                }, 1400);
+            }
+
+            this.combo = 0;
+            this.triggerHtmxComboUpdate();
+            return;
+        }
 
         this.combo = 0;
         this.health = Math.max(0, this.health - 20); // 每次漏掉扣 20 HP
@@ -747,6 +839,14 @@ class TypingGame {
         if (this.bombSlot2) {
             this.bombSlot2.className = this.bombs >= 2 ? 'bomb-slot ready' : 'bomb-slot empty';
         }
+        if (this.bombSlot3) {
+            if (this.maxBombs >= 3) {
+                this.bombSlot3.style.display = 'inline-flex';
+                this.bombSlot3.className = this.bombs >= 3 ? 'bomb-slot ready' : 'bomb-slot empty';
+            } else {
+                this.bombSlot3.style.display = 'none';
+            }
+        }
         if (this.bombHint) {
             this.bombHint.style.display = this.bombs > 0 ? 'inline-block' : 'none';
         }
@@ -766,6 +866,51 @@ class TypingGame {
                     mainSpan.textContent = 'SPACE [AI NEURAL SCANNER]';
                 }
             }
+        }
+    }
+
+    // 長輩守護寶物二：護盾次數顯示更新
+    updateShieldUI() {
+        if (this.shieldDisplay) {
+            this.shieldDisplay.textContent = `🛡️ ${this.shields}`;
+            this.shieldDisplay.style.opacity = this.shields > 0 ? '1' : '0.4';
+        }
+    }
+
+    // 長輩守護寶物三：虛擬鍵盤智慧按鍵指引光 (Keyfinder Guide Light)
+    updateKeyGuideLight() {
+        if (!this.isA11yMode || this.isAiPilot || !this.isPlaying || this.targets.length === 0) {
+            this.clearKeyGuideLight();
+            return;
+        }
+
+        // 尋找場上威脅度最高（離底部最近）的目標
+        let mostUrgent = null;
+        let maxY = -1;
+        for (const t of this.targets) {
+            if (t.y > maxY) {
+                maxY = t.y;
+                mostUrgent = t;
+            }
+        }
+
+        if (mostUrgent && mostUrgent.char !== this.currentGuidedChar) {
+            this.clearKeyGuideLight();
+            this.currentGuidedChar = mostUrgent.char;
+            const entry = this.charToKeyMap.get(mostUrgent.char);
+            if (entry && entry.element) {
+                entry.element.classList.add('key-guide-light');
+            }
+        }
+    }
+
+    clearKeyGuideLight() {
+        if (this.currentGuidedChar && this.charToKeyMap) {
+            const entry = this.charToKeyMap.get(this.currentGuidedChar);
+            if (entry && entry.element) {
+                entry.element.classList.remove('key-guide-light');
+            }
+            this.currentGuidedChar = null;
         }
     }
 
@@ -964,6 +1109,19 @@ class TypingGame {
             this.modalA11yLabel.textContent = enabled ? 'ON' : 'OFF';
             this.modalA11yLabel.style.color = enabled ? 'var(--accent-yellow)' : '';
         }
+
+        if (enabled) {
+            if (this.shieldContainer) this.shieldContainer.style.display = 'flex';
+            if (this.bombSlot3) this.bombSlot3.style.display = 'inline-flex';
+            if (this.isPlaying) {
+                this.maxBombs = 3;
+            }
+        } else {
+            this.clearKeyGuideLight();
+            if (this.shieldContainer && !this.isPlaying) this.shieldContainer.style.display = 'none';
+            if (this.bombSlot3 && !this.isPlaying) this.bombSlot3.style.display = 'none';
+        }
+
         try {
             if (typeof localStorage !== 'undefined') {
                 localStorage.setItem('TYPING_A11Y_MODE', enabled ? 'true' : 'false');

@@ -643,6 +643,56 @@ body {
     border: 1px solid var(--border-color);
 }
 
+/* 護盾守護 HUD 槽位 (長輩寶物) */
+.shield-hud-panel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #0d1117;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(63, 185, 80, 0.4);
+    box-shadow: 0 0 10px rgba(63, 185, 80, 0.15);
+}
+
+.shield-value {
+    color: var(--accent-green) !important;
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-shadow: 0 0 8px rgba(63, 185, 80, 0.5);
+}
+
+/* 鍵盤智慧指引燈 (Keyfinder Guide Light - 長輩寶物) */
+.vkey.key-guide-light {
+    border-color: #3fb950 !important;
+    background: rgba(63, 185, 80, 0.3) !important;
+    color: #fff !important;
+    box-shadow: 0 0 16px rgba(63, 185, 80, 0.8), inset 0 0 8px rgba(63, 185, 80, 0.5) !important;
+    animation: keyGuidePulse 0.9s infinite alternate ease-in-out;
+}
+
+@keyframes keyGuidePulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 8px rgba(63, 185, 80, 0.5);
+    }
+    100% {
+        transform: scale(1.08);
+        box-shadow: 0 0 20px rgba(63, 185, 80, 0.95);
+        border-color: #7ee787;
+    }
+}
+
+/* 護盾抵擋爆發動畫 */
+.shield-block-flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at bottom center, rgba(63, 185, 80, 0.5) 0%, rgba(88, 166, 255, 0.1) 70%, transparent 100%);
+    pointer-events: none;
+    z-index: 6;
+    animation: flashFade 0.4s ease-out forwards;
+}
+
 .bomb-slots {
     display: flex;
     gap: 6px;
