@@ -272,8 +272,30 @@ async function runAutomatedTests() {
     if (!postRes.body.includes('new-entry-highlight')) throw new Error('Leaderboard missing new-entry-highlight');
     console.log('✅ AI score successfully saved and returned in Top 10 leaderboard with highlight animation!');
 
+    console.log('\n--- 11. Testing EMP Bomb Recharge (60 pts) & Full Screen Blast ---');
+    game.startGame();
+    if (game.bombs !== 0) throw new Error('Expected 0 bombs at game start');
+    
+    // Simulate reaching 60 points milestone
+    game.score = 65;
+    game.checkBombRecharge();
+    if (game.bombs !== 1) throw new Error(`Expected 1 bomb after reaching 65 pts, got ${game.bombs}`);
+    console.log('✅ EMP Bomb successfully charged at 60 points milestone!');
+
+    // Add 3 active targets
+    game.targets.push({ id: 't1', char: 'A', x: 200, y: 150, speed: 50, element: new MockElement('div') });
+    game.targets.push({ id: 't2', char: 'B', x: 300, y: 250, speed: 50, element: new MockElement('div') });
+    game.targets.push({ id: 't3', char: 'C', x: 400, y: 350, speed: 50, element: new MockElement('div') });
+
+    const prevScore = game.score;
+    // Trigger EMP Bomb
+    game.triggerEmpBomb();
+    if (game.bombs !== 0) throw new Error('Expected 0 bombs after triggering EMP bomb');
+    if (game.targets.length !== 0) throw new Error('Expected all targets to be cleared by EMP bomb');
+    console.log(`✅ EMP Bomb detonated: screen cleared all targets, score increased from ${prevScore} to ${game.score}!`);
+
     console.log('\n==============================================');
-    console.log('🎉 ALL 10 AUTOMATED TEST SUITES PASSED 100%!');
+    console.log('🎉 ALL 11 AUTOMATED TEST SUITES PASSED 100%!');
     console.log('==============================================\n');
     process.exit(0);
 }

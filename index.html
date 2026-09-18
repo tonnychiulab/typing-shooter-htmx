@@ -34,6 +34,14 @@
                     </div>
                 </div>
             </div>
+            <div class="hud-item emp-hud-panel" title="每累積 60 分充能 1 枚 EMP 全域核彈 (按空白鍵 Space 施放)">
+                <span class="hud-label">EMP BOMB</span>
+                <div id="bomb-slots" class="bomb-slots">
+                    <span class="bomb-slot empty" id="bomb-slot-1">⚡</span>
+                    <span class="bomb-slot empty" id="bomb-slot-2">⚡</span>
+                </div>
+                <span id="bomb-hint" class="bomb-hint">[SPACE]</span>
+            </div>
             <div class="hud-item ai-hud-panel">
                 <button id="ai-toggle-btn" class="ai-toggle-button" type="button" title="切換 AI 副駕駛接管 (快捷鍵 Tab)">
                     <span class="ai-pulse-dot"></span>
@@ -89,7 +97,7 @@
                 <span class="label">AI RADAR:</span>
                 <span id="ai-decision-display" class="ai-decision-ticker">STANDBY</span>
             </div>
-            <span class="hint">Tab: 切換 AI 接管 | 支援全符號 Shift 鍵</span>
+            <span class="hint">Space: EMP 全域核彈 | Tab: 切換 AI 接管 | 支援全符號 Shift 鍵</span>
         </footer>
 
         <!-- 遊戲開始 / 說明覆蓋層 (全域最上層，不再受戰場高度限制) -->
@@ -112,7 +120,8 @@
                 <div class="instructions">
                     <p>🎯 螢幕上會出現飄落的字元目標</p>
                     <p>⌨️ 按下對應按鍵進行精確鎖定射擊（區分大小寫與符號）</p>
-                    <p>🤖 可隨時開啟 AI 副駕駛接管鍵盤，視覺鎖定迎擊</p>
+                    <p>⚡ 每滿 60 分蓄能 1 枚 EMP 核彈，按 <strong style="color: var(--accent-red);">[SPACE]</strong> 一鍵全域殲滅！</p>
+                    <p>🤖 可隨時開啟 AI 副駕駛接管鍵盤，危急時自動啟動大招</p>
                     <p>⚠️ 目標墜落到底部將扣除防禦生命值</p>
                 </div>
 

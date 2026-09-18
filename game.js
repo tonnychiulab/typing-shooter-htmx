@@ -116,11 +116,22 @@ class TypingGame {
         this.aiDecisionDisplay = document.getElementById('ai-decision-display');
         this.virtualKeyboard = document.getElementById('virtual-keyboard');
         this.aiGazeReticle = document.getElementById('ai-gaze-reticle');
+        this.bombSlot1 = document.getElementById('bomb-slot-1');
+        this.bombSlot2 = document.getElementById('bomb-slot-2');
+        this.bombHint = document.getElementById('bomb-hint');
+        this.spaceKeyElement = null;
+
+        // 武器與 EMP 核彈大招系統 (每 60 分充能 1 發，最多 2 發)
+        this.bombs = 0;
+        this.maxBombs = 2;
+        this.bombScoreMilestone = 60;
+        this.lastBombScoreThreshold = 0;
 
         // 建立虛擬鍵盤與字元快取對映表
         this.charToKeyMap = new Map();
         this.shiftKeyElements = [];
         this.buildVirtualKeyboard();
+        this.updateBombUI();
 
         // AI 駕駛狀態
         this.isAiPilot = false;
@@ -216,6 +227,60 @@ class TypingGame {
         osc.stop(this.audioCtx.currentTime + 0.18);
     }
 
+    playBombReadySound() {
+        if (!this.audioCtx) return;
+        try {
+            if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+            const now = this.audioCtx.currentTime;
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.setValueAtTime(660, now + 0.08);
+            osc.frequency.setValueAtTime(880, now + 0.16);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.28);
+        } catch (e) {}
+    }
+
+    playBombSound() {
+        if (!this.audioCtx) return;
+        try {
+            if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+            const now = this.audioCtx.currentTime;
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.exponentialRampToValueAtTime(35, now + 0.6);
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.65);
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.65);
+
+            const bufferSize = Math.floor(this.audioCtx.sampleRate * 0.35);
+            const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            const noise = this.audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const noiseGain = this.audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.25, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+            noise.connect(noiseGain);
+            noiseGain.connect(this.audioCtx.destination);
+            noise.start(now);
+        } catch (e) {}
+    }
+
     bindEvents() {
         this.startBtn.addEventListener('click', () => this.startGame());
 
@@ -264,9 +329,13 @@ class TypingGame {
                 return;
             }
 
-            // 阻止如空白鍵頁面滾動等預設行為
-            if (e.key === ' ') {
+            // 阻止如空白鍵頁面滾動等預設行為，若有 EMP 核彈則啟動大招
+            if (e.key === ' ' || e.code === 'Space') {
                 e.preventDefault();
+                if (this.bombs > 0) {
+                    this.triggerEmpBomb();
+                    return;
+                }
             }
 
             this.handleKeyInput(e.key);
@@ -288,6 +357,9 @@ class TypingGame {
         this.health = 100;
         this.hits = 0;
         this.misses = 0;
+        this.bombs = 0;
+        this.lastBombScoreThreshold = 0;
+        this.updateBombUI();
         this.targets = [];
         this.targetsContainer.innerHTML = '';
         this.fxLayer.innerHTML = '';
@@ -426,6 +498,9 @@ class TypingGame {
         const gainedScore = 10 + Math.floor(this.combo * 2.5);
         this.score += gainedScore;
 
+        // 檢查 EMP 核彈充能
+        this.checkBombRecharge();
+
         // 砲台旋轉轉向目標
         this.aimCannonAt(target.x, target.y);
 
@@ -457,10 +532,12 @@ class TypingGame {
         this.triggerHtmxHealthUpdate();
 
         // 畫面受損震動紅光閃爍
-        this.battlefield.style.boxShadow = 'inset 0 0 40px rgba(248, 81, 73, 0.6)';
-        setTimeout(() => {
-            this.battlefield.style.boxShadow = 'none';
-        }, 180);
+        if (this.battlefield) {
+            this.battlefield.style.boxShadow = 'inset 0 0 40px rgba(248, 81, 73, 0.6)';
+            setTimeout(() => {
+                if (this.battlefield) this.battlefield.style.boxShadow = 'none';
+            }, 180);
+        }
 
         if (this.health <= 0) {
             this.triggerGameOver();
@@ -468,6 +545,7 @@ class TypingGame {
     }
 
     aimCannonAt(targetX, targetY) {
+        if (!this.cannon || !this.cannonBarrel) return;
         const cannonRect = this.cannon.getBoundingClientRect();
         const fieldRect = this.battlefield.getBoundingClientRect();
 
@@ -482,7 +560,7 @@ class TypingGame {
         this.cannonBarrel.style.transform = `rotate(${angleDeg}deg)`;
     }
 
-    drawLaserBeam(targetX, targetY) {
+    drawLaserBeam(targetX, targetY, color = '#58a6ff', width = 3) {
         const cannonRect = this.cannon.getBoundingClientRect();
         const fieldRect = this.battlefield.getBoundingClientRect();
 
@@ -495,16 +573,16 @@ class TypingGame {
         line.setAttribute('y1', startY);
         line.setAttribute('x2', targetX);
         line.setAttribute('y2', targetY);
-        line.setAttribute('stroke', '#58a6ff');
-        line.setAttribute('stroke-width', '3');
-        line.setAttribute('filter', 'drop-shadow(0 0 6px #58a6ff)');
+        line.setAttribute('stroke', color);
+        line.setAttribute('stroke-width', width);
+        line.setAttribute('filter', `drop-shadow(0 0 8px ${color})`);
 
         this.fxLayer.appendChild(line);
 
-        // 0.1 秒後淡出消失
+        // 0.12 秒後淡出消失
         setTimeout(() => {
             line.remove();
-        }, 90);
+        }, 120);
     }
 
     explodeTarget(target) {
@@ -594,6 +672,127 @@ class TypingGame {
         statusEl.className = 'hud-value status-over';
         statusEl.textContent = 'COMPROMISED';
         htmx.trigger(document.body, 'statusUpdated');
+    }
+
+    // ==========================================
+    // EMP 全域核彈大招系統 (EMP ULTIMATE BOMB)
+    // ==========================================
+    checkBombRecharge() {
+        const earnedThreshold = Math.floor(this.score / this.bombScoreMilestone) * this.bombScoreMilestone;
+        if (earnedThreshold > this.lastBombScoreThreshold) {
+            const added = Math.floor((earnedThreshold - this.lastBombScoreThreshold) / this.bombScoreMilestone);
+            this.lastBombScoreThreshold = earnedThreshold;
+            if (this.bombs < this.maxBombs) {
+                this.bombs = Math.min(this.maxBombs, this.bombs + added);
+                this.playBombReadySound();
+                this.updateBombUI(true);
+            }
+        }
+    }
+
+    updateBombUI(animate = false) {
+        if (this.bombSlot1) {
+            this.bombSlot1.className = this.bombs >= 1 ? 'bomb-slot ready' : 'bomb-slot empty';
+        }
+        if (this.bombSlot2) {
+            this.bombSlot2.className = this.bombs >= 2 ? 'bomb-slot ready' : 'bomb-slot empty';
+        }
+        if (this.bombHint) {
+            this.bombHint.style.display = this.bombs > 0 ? 'inline-block' : 'none';
+        }
+
+        // 虛擬鍵盤 Space 鍵外觀狀態連動
+        if (this.spaceKeyElement) {
+            if (this.bombs > 0) {
+                this.spaceKeyElement.classList.add('vkey-space-bomb-ready');
+                const mainSpan = this.spaceKeyElement.querySelector('.vkey-main');
+                if (mainSpan) {
+                    mainSpan.textContent = `⚡ EMP BLAST READY [SPACE] (x${this.bombs})`;
+                }
+            } else {
+                this.spaceKeyElement.classList.remove('vkey-space-bomb-ready');
+                const mainSpan = this.spaceKeyElement.querySelector('.vkey-main');
+                if (mainSpan) {
+                    mainSpan.textContent = 'SPACE [AI NEURAL SCANNER]';
+                }
+            }
+        }
+    }
+
+    triggerEmpBomb() {
+        if (this.bombs <= 0 || !this.isPlaying) return;
+
+        this.bombs--;
+        this.updateBombUI();
+        this.playBombSound();
+
+        // 虛擬鍵盤 Space 鍵按下動效
+        this.visualPressKey(' ');
+
+        // 震波全屏特效
+        this.createEmpShockwave();
+
+        // 砲台全目標雷射連鎖爆破
+        if (this.targets && this.targets.length > 0) {
+            const targetsToDestroy = [...this.targets];
+            this.targets = [];
+
+            // 立即給予目標消滅獎勵分數
+            this.score += targetsToDestroy.length * 15;
+            this.hits += targetsToDestroy.length;
+            this.triggerHtmxScoreUpdate();
+
+            targetsToDestroy.forEach((target, idx) => {
+                setTimeout(() => {
+                    this.drawLaserBeam(target.x, target.y, '#f85149', 4);
+                    this.explodeTarget(target);
+                }, idx * 25);
+            });
+
+            if (this.cannonBarrel) {
+                this.cannonBarrel.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        if (this.aiDecisionDisplay) {
+            const oldText = this.aiDecisionDisplay.textContent;
+            this.aiDecisionDisplay.textContent = '⚡ EMP SHOCKWAVE DETONATED!';
+            this.aiDecisionDisplay.style.color = 'var(--accent-red)';
+            setTimeout(() => {
+                if (this.aiDecisionDisplay) {
+                    this.aiDecisionDisplay.style.color = '';
+                    if (this.aiDecisionDisplay.textContent.includes('DETONATED')) {
+                        this.aiDecisionDisplay.textContent = oldText;
+                    }
+                }
+            }, 1200);
+        }
+    }
+
+    createEmpShockwave() {
+        if (!this.cannon || !this.battlefield || !this.fxLayer) return;
+        const cannonRect = this.cannon.getBoundingClientRect();
+        const fieldRect = this.battlefield.getBoundingClientRect();
+        const originX = cannonRect.left - fieldRect.left + cannonRect.width / 2;
+        const originY = cannonRect.top - fieldRect.top;
+
+        // SVG 衝擊環
+        const wave = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        wave.setAttribute('cx', originX);
+        wave.setAttribute('cy', originY);
+        wave.setAttribute('r', '10');
+        wave.setAttribute('class', 'emp-shockwave-ring');
+        this.fxLayer.appendChild(wave);
+
+        // 全螢幕電磁閃光
+        const flash = document.createElement('div');
+        flash.className = 'emp-screen-flash';
+        this.battlefield.appendChild(flash);
+
+        setTimeout(() => {
+            wave.remove();
+            flash.remove();
+        }, 600);
     }
 
     // ==========================================
@@ -720,6 +919,10 @@ class TypingGame {
                 keyEl.addEventListener('click', (e) => {
                     e.preventDefault();
                     if (!this.isPlaying) return;
+                    if (keyDef.key === ' ' && this.bombs > 0) {
+                        this.triggerEmpBomb();
+                        return;
+                    }
                     const charToFire = keyDef.key;
                     if (charToFire && charToFire.length === 1) {
                         this.handleKeyInput(charToFire);
@@ -735,6 +938,7 @@ class TypingGame {
                 }
                 if (keyDef.key === ' ') {
                     this.charToKeyMap.set(' ', { element: keyEl, needsShift: false });
+                    this.spaceKeyElement = keyEl;
                 }
 
                 rowEl.appendChild(keyEl);
@@ -867,6 +1071,20 @@ class TypingGame {
         }
 
         if (!bestTarget) return;
+
+        // AI 智慧施放大招判定：若持有 EMP 核彈且 (場上敵人 >= 4 或最高威脅目標即將觸底)
+        if (this.bombs > 0 && this.battlefield) {
+            const fieldHeight = this.battlefield.clientHeight - 40;
+            const isCrowded = this.targets.length >= 4;
+            const isEmergency = bestTarget && (bestTarget.y >= fieldHeight - 110);
+            if (isCrowded || isEmergency) {
+                if (this.aiDecisionDisplay) {
+                    this.aiDecisionDisplay.textContent = '⚡ AI EMERGENCY: DETONATING EMP!';
+                }
+                this.triggerEmpBomb();
+                return;
+            }
+        }
 
         // 更新視覺鎖定框
         if (this.lockedTargetId !== bestTarget.id) {
