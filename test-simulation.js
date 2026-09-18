@@ -162,7 +162,7 @@ async function runAutomatedTests() {
     game.toggleAiPilot(true);
     if (game.isAiPilot !== true) throw new Error('AI pilot should be ON');
     const aiLabel = elementsById.get('ai-status-label');
-    if (aiLabel.textContent !== 'ONLINE') throw new Error(`Expected ONLINE, got ${aiLabel.textContent}`);
+    if (aiLabel.textContent !== '運作中') throw new Error(`Expected 運作中, got ${aiLabel.textContent}`);
     console.log('✅ AI Pilot enabled. Status label:', aiLabel.textContent);
 
     console.log('\n--- 3. Testing Start Game in AI Mode ---');
@@ -229,7 +229,7 @@ async function runAutomatedTests() {
     if (game.aiTimer !== null) throw new Error('AI loop should stop on Game Over');
 
     const gameOverOverlay = elementsById.get('gameover-overlay');
-    if (!gameOverOverlay.innerHTML.includes('AI AUTONOMOUS RUN')) {
+    if (!gameOverOverlay.innerHTML.includes('AI 自主巡航接管')) {
         throw new Error('Game Over overlay missing AI participant badge');
     }
     if (!gameOverOverlay.innerHTML.includes('AI_AGI_OVERLORD')) {

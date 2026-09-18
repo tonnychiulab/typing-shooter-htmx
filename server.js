@@ -79,18 +79,18 @@ function renderLeaderboardHtml(scores, highlightedId = null) {
     return `
         <div class="leaderboard-card">
             <div class="leaderboard-header">
-                <span class="leaderboard-tag">CYBER_NET // TOP 10 PILOTS</span>
+                <span class="leaderboard-tag">CYBER_NET // 前十強防衛英雄榜</span>
                 <span class="leaderboard-status-dot"></span>
             </div>
             <div class="leaderboard-table-container">
                 <table class="leaderboard-table">
                     <thead>
                         <tr>
-                            <th>RANK</th>
-                            <th>CALLSIGN</th>
-                            <th>SCORE</th>
-                            <th>COMBO</th>
-                            <th>ACC</th>
+                            <th>排名</th>
+                            <th>駕駛呼號</th>
+                            <th>得分</th>
+                            <th>最高連擊</th>
+                            <th>命中率</th>
                         </tr>
                     </thead>
                     <tbody>

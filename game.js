@@ -60,7 +60,7 @@ const SYMBOL_ANNOTATIONS = {
 const AI_MODELS = {
     rookie: {
         name: 'AI_ROOKIE_V1',
-        label: '🟢 ROOKIE BOT',
+        label: '🟢 初級新手 (ROOKIE)',
         minDelay: 220,
         maxDelay: 320,
         accuracy: 0.88, // 偶爾手滑誤擊
@@ -68,7 +68,7 @@ const AI_MODELS = {
     },
     veteran: {
         name: 'AI_CYBER_PRO',
-        label: '🟡 CYBER PRO',
+        label: '🟡 賽博老兵 (PRO)',
         minDelay: 90,
         maxDelay: 150,
         accuracy: 0.98,
@@ -76,7 +76,7 @@ const AI_MODELS = {
     },
     god: {
         name: 'AI_AGI_OVERLORD',
-        label: '🔴 AGI GOD',
+        label: '🔴 AGI 超神 (GOD)',
         minDelay: 30,
         maxDelay: 55,
         accuracy: 1.0,
@@ -123,10 +123,10 @@ const KEYBOARD_LAYOUT = [
         { key: 'Control', label: 'CTRL', width: 'wide' },
         { key: 'Alt', label: 'OPT' },
         { key: 'Meta', label: 'CMD' },
-        { key: ' ', label: 'SPACE [AI NEURAL SCANNER]', width: 'space' },
+        { key: ' ', label: '空白鍵 SPACE [AI 神經掃描]', width: 'space' },
         { key: 'Meta', label: 'CMD' },
         { key: 'Alt', label: 'OPT' },
-        { key: 'ai-eye', label: '👁️ AI EYE', width: 'wide' }
+        { key: 'ai-eye', label: '👁️ AI 視線', width: 'wide' }
     ]
 ];
 
@@ -566,7 +566,7 @@ class TypingGame {
 
     handleKeyInput(pressedKey) {
         // 更新底部輸入按鍵 HUD
-        this.lastKeyDisplay.textContent = pressedKey === ' ' ? 'SPACE' : pressedKey;
+        this.lastKeyDisplay.textContent = pressedKey === ' ' ? '空白鍵' : pressedKey;
 
         // 虛擬鍵盤敲擊視覺回饋
         this.visualPressKey(pressedKey);
@@ -649,12 +649,12 @@ class TypingGame {
 
             if (this.aiDecisionDisplay) {
                 const oldText = this.aiDecisionDisplay.textContent;
-                this.aiDecisionDisplay.textContent = `🛡️ SHIELD ABSORBED DAMAGE! (${this.shields} LEFT)`;
+                this.aiDecisionDisplay.textContent = `🛡️ 護盾抵擋傷害！(剩餘 ${this.shields} 次)`;
                 this.aiDecisionDisplay.style.color = 'var(--accent-green)';
                 setTimeout(() => {
                     if (this.aiDecisionDisplay) {
                         this.aiDecisionDisplay.style.color = '';
-                        if (this.aiDecisionDisplay.textContent.includes('SHIELD')) {
+                        if (this.aiDecisionDisplay.textContent.includes('護盾')) {
                             this.aiDecisionDisplay.textContent = oldText;
                         }
                     }
@@ -753,27 +753,27 @@ class TypingGame {
         const currentModel = AI_MODELS[this.currentAiModelKey] || AI_MODELS.veteran;
         const defaultCallsign = this.isAiPilot ? currentModel.name : 'PILOT_01';
         const aiBadge = this.isAiPilot
-            ? `<div style="margin-bottom: 14px;"><span class="badge" style="border-color: var(--accent-yellow); color: var(--accent-yellow); font-size: 0.85rem; padding: 6px 12px;">🤖 AI AUTONOMOUS RUN: ${currentModel.label}</span></div>`
+            ? `<div style="margin-bottom: 14px;"><span class="badge" style="border-color: var(--accent-yellow); color: var(--accent-yellow); font-size: 0.85rem; padding: 6px 12px;">🤖 AI 自主巡航接管: ${currentModel.label}</span></div>`
             : '';
 
         // 透過 HTMX 自定義事件將 HTML 替換到 gameover-overlay
         const gameOverHTML = `
             <div class="modal modal-large">
-                <h1 class="title" style="color: var(--accent-red); text-shadow: 0 0 15px rgba(248, 81, 73, 0.5);">DEFENSE BREACHED</h1>
-                <p class="subtitle">防衛線失守・任務終止</p>
+                <h1 class="title" style="color: var(--accent-red); text-shadow: 0 0 15px rgba(248, 81, 73, 0.5);">防線失守・任務結束</h1>
+                <p class="subtitle">打字防衛戰・陣地失守統計報告</p>
                 
                 ${aiBadge}
 
                 <div class="instructions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div><strong style="color: var(--text-secondary)">FINAL SCORE:</strong> <span style="color: var(--accent-cyan); font-size: 1.2rem;">${this.score}</span></div>
-                    <div><strong style="color: var(--text-secondary)">MAX COMBO:</strong> <span style="color: var(--accent-yellow); font-size: 1.2rem;">${this.maxCombo}x</span></div>
-                    <div><strong style="color: var(--text-secondary)">TARGETS HIT:</strong> <span style="color: var(--accent-green);">${this.hits}</span></div>
-                    <div><strong style="color: var(--text-secondary)">ACCURACY:</strong> <span>${accuracy}%</span></div>
+                    <div><strong style="color: var(--text-secondary)">最終得分：</strong> <span style="color: var(--accent-cyan); font-size: 1.2rem;">${this.score}</span></div>
+                    <div><strong style="color: var(--text-secondary)">最高連擊：</strong> <span style="color: var(--accent-yellow); font-size: 1.2rem;">${this.maxCombo}x</span></div>
+                    <div><strong style="color: var(--text-secondary)">命中目標：</strong> <span style="color: var(--accent-green);">${this.hits}</span></div>
+                    <div><strong style="color: var(--text-secondary)">擊準命中率：</strong> <span>${accuracy}%</span></div>
                 </div>
 
                 <!-- HTMX 戰績提交表單 -->
                 <div class="score-submission-box" id="submission-box">
-                    <p style="font-size: 0.82rem; color: var(--text-secondary);">登錄戰績至 CYBER_NET 防衛排行榜：</p>
+                    <p style="font-size: 0.82rem; color: var(--text-secondary);">登錄戰績至 CYBER_NET 防衛英雄榜：</p>
                     <form id="score-form" 
                           hx-post="/api/score" 
                           hx-target="#leaderboard-result" 
@@ -783,20 +783,20 @@ class TypingGame {
                         <input type="hidden" name="score" value="${this.score}">
                         <input type="hidden" name="maxCombo" value="${this.maxCombo}">
                         <input type="hidden" name="accuracy" value="${accuracy}">
-                        <input type="text" name="name" class="callsign-input" value="${defaultCallsign}" placeholder="YOUR CALLSIGN" maxlength="20" required autofocus autocomplete="off">
+                        <input type="text" name="name" class="callsign-input" value="${defaultCallsign}" placeholder="請輸入駕駛員呼號 / 暱稱" maxlength="20" required autofocus autocomplete="off">
                         <button type="submit" class="submit-record-btn">
-                            TRANSMIT RECORD
+                            登錄英雄榜
                         </button>
                     </form>
                 </div>
 
                 <!-- HTMX 動態置換排行榜區域 (初次加載由 HTMX GET /api/leaderboard 載入) -->
                 <div id="leaderboard-result" hx-get="/api/leaderboard" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="leaderboard-loading">📡 連線至 CYBER_NET 載入最新戰績榜...</div>
+                    <div class="leaderboard-loading">📡 連線至 CYBER_NET 載入最新英雄榜...</div>
                 </div>
 
                 <div style="margin-top: 20px;">
-                    <button id="restart-btn" class="glow-button">RETRY MISSION [SPACE / ENTER]</button>
+                    <button id="restart-btn" class="glow-button">🔄 再次挑戰 [空白鍵 / Enter]</button>
                 </div>
             </div>
         `;
@@ -812,7 +812,7 @@ class TypingGame {
         // 發送 HTMX 狀態事件
         const statusEl = document.getElementById('status-display');
         statusEl.className = 'hud-value status-over';
-        statusEl.textContent = 'COMPROMISED';
+        statusEl.textContent = '失守';
         htmx.trigger(document.body, 'statusUpdated');
     }
 
@@ -857,13 +857,13 @@ class TypingGame {
                 this.spaceKeyElement.classList.add('vkey-space-bomb-ready');
                 const mainSpan = this.spaceKeyElement.querySelector('.vkey-main');
                 if (mainSpan) {
-                    mainSpan.textContent = `⚡ EMP BLAST READY [SPACE] (x${this.bombs})`;
+                    mainSpan.textContent = `⚡ EMP 核彈已就緒 [空白鍵] (x${this.bombs})`;
                 }
             } else {
                 this.spaceKeyElement.classList.remove('vkey-space-bomb-ready');
                 const mainSpan = this.spaceKeyElement.querySelector('.vkey-main');
                 if (mainSpan) {
-                    mainSpan.textContent = 'SPACE [AI NEURAL SCANNER]';
+                    mainSpan.textContent = '空白鍵 SPACE [AI 神經掃描]';
                 }
             }
         }
@@ -951,12 +951,12 @@ class TypingGame {
 
         if (this.aiDecisionDisplay) {
             const oldText = this.aiDecisionDisplay.textContent;
-            this.aiDecisionDisplay.textContent = '⚡ EMP SHOCKWAVE DETONATED!';
+            this.aiDecisionDisplay.textContent = '⚡ EMP 電磁震波已引爆！';
             this.aiDecisionDisplay.style.color = 'var(--accent-red)';
             setTimeout(() => {
                 if (this.aiDecisionDisplay) {
                     this.aiDecisionDisplay.style.color = '';
-                    if (this.aiDecisionDisplay.textContent.includes('DETONATED')) {
+                    if (this.aiDecisionDisplay.textContent.includes('引爆')) {
                         this.aiDecisionDisplay.textContent = oldText;
                     }
                 }
@@ -1000,7 +1000,7 @@ class TypingGame {
 
         const statusEl = document.getElementById('status-display');
         statusEl.className = 'hud-value status-active';
-        statusEl.textContent = 'DEFENDING';
+        statusEl.textContent = '防衛中';
         htmx.trigger(document.body, 'statusUpdated');
     }
 
@@ -1053,15 +1053,15 @@ class TypingGame {
         if (!this.aiToggleBtn || !this.aiStatusLabel) return;
         if (this.isAiPilot) {
             this.aiToggleBtn.classList.add('active');
-            this.aiStatusLabel.textContent = 'ONLINE';
+            this.aiStatusLabel.textContent = '運作中';
             if (this.aiDecisionDisplay) {
-                this.aiDecisionDisplay.textContent = 'RADAR ENGAGED';
+                this.aiDecisionDisplay.textContent = '雷達全域掃描中';
             }
         } else {
             this.aiToggleBtn.classList.remove('active');
-            this.aiStatusLabel.textContent = 'OFF';
+            this.aiStatusLabel.textContent = '關閉';
             if (this.aiDecisionDisplay) {
-                this.aiDecisionDisplay.textContent = 'STANDBY';
+                this.aiDecisionDisplay.textContent = '待命中';
             }
             this.clearTargetLock();
         }
@@ -1102,11 +1102,11 @@ class TypingGame {
             }
         }
         if (this.a11yStatusLabel) {
-            this.a11yStatusLabel.textContent = enabled ? 'ON' : 'OFF';
+            this.a11yStatusLabel.textContent = enabled ? '開啟' : '關閉';
             this.a11yStatusLabel.style.color = enabled ? 'var(--accent-yellow)' : '';
         }
         if (this.modalA11yLabel) {
-            this.modalA11yLabel.textContent = enabled ? 'ON' : 'OFF';
+            this.modalA11yLabel.textContent = enabled ? '開啟' : '關閉';
             this.modalA11yLabel.style.color = enabled ? 'var(--accent-yellow)' : '';
         }
 
@@ -1230,8 +1230,8 @@ class TypingGame {
 
             const labelEl = this.aiGazeReticle.querySelector('.reticle-label');
             if (labelEl) {
-                const displayChar = char === ' ' ? 'SPACE' : char;
-                labelEl.textContent = `AI GAZE: [${displayChar}]`;
+                const displayChar = char === ' ' ? '空白鍵' : char;
+                labelEl.textContent = `AI 凝視: [${displayChar}]`;
             }
 
             this.aiGazeReticle.classList.remove('hidden');
@@ -1303,7 +1303,7 @@ class TypingGame {
             this.clearTargetLock();
             this.clearGaze();
             if (this.aiGazeReticle) this.aiGazeReticle.classList.add('hidden');
-            if (this.aiDecisionDisplay) this.aiDecisionDisplay.textContent = 'SEARCHING SKY...';
+            if (this.aiDecisionDisplay) this.aiDecisionDisplay.textContent = '搜尋天際目標中...';
             return;
         }
 
@@ -1330,7 +1330,7 @@ class TypingGame {
             const isEmergency = bestTarget && (bestTarget.y >= fieldHeight - 110);
             if (isCrowded || isEmergency) {
                 if (this.aiDecisionDisplay) {
-                    this.aiDecisionDisplay.textContent = '⚡ AI EMERGENCY: DETONATING EMP!';
+                    this.aiDecisionDisplay.textContent = '⚡ 緊急狀況：AI 啟動 EMP 核彈！';
                 }
                 this.triggerEmpBomb();
                 return;
@@ -1350,8 +1350,8 @@ class TypingGame {
         const ttl = (remainingDistance / Math.max(1, bestTarget.speed)).toFixed(1);
 
         if (this.aiDecisionDisplay) {
-            const safeChar = bestTarget.char === ' ' ? 'SPC' : bestTarget.char;
-            this.aiDecisionDisplay.textContent = `TARGET [${safeChar}] TTL: ${ttl}s`;
+            const safeChar = bestTarget.char === ' ' ? '空白' : bestTarget.char;
+            this.aiDecisionDisplay.textContent = `鎖定目標 [${safeChar}] 墜落倒數: ${ttl}秒`;
         }
 
         // 核心亮點：AI 視線立即凝視虛擬鍵盤對應鍵 (AI Gaze) 並啟動 Shift 燈
@@ -1435,18 +1435,18 @@ function renderClientLeaderboardHtml(scores, highlightedId = null) {
     return `
         <div class="leaderboard-card">
             <div class="leaderboard-header">
-                <span class="leaderboard-tag">CYBER_NET // TOP 10 PILOTS (WEB CLOUD)</span>
+                <span class="leaderboard-tag">CYBER_NET // 前十強防衛英雄榜 (雲端版)</span>
                 <span class="leaderboard-status-dot"></span>
             </div>
             <div class="leaderboard-table-container">
                 <table class="leaderboard-table">
                     <thead>
                         <tr>
-                            <th>RANK</th>
-                            <th>CALLSIGN</th>
-                            <th>SCORE</th>
-                            <th>COMBO</th>
-                            <th>ACC</th>
+                            <th>排名</th>
+                            <th>駕駛呼號</th>
+                            <th>得分</th>
+                            <th>最高連擊</th>
+                            <th>命中率</th>
                         </tr>
                     </thead>
                     <tbody>

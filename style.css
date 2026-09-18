@@ -893,7 +893,7 @@ body {
 }
 
 .ai-locked-target::after {
-    content: "LOCK";
+    content: "鎖定";
     position: absolute;
     top: -16px;
     left: 50%;

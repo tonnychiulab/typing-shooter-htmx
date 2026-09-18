@@ -53,7 +53,7 @@
    - **AI 副駕駛自主決策**：在 AI 巡航狀態下，遇場上目標過多或危急逼近防線時，AI 會自動拍下大招核彈化解危機。
 
 6. **👁️ 長輩友善與無障礙大字模式（Senior & A11y Accessibility Mode）**
-   - **一鍵切換**：頂部 HUD 與開場選單設有 `👁️ 大字模式 [ON / OFF]` 切換開關，偏好設定自動持久化儲存。
+   - **一鍵切換**：頂部 HUD 與開場選單設有 `👁️ 大字模式 [開啟 / 關閉]` 切換開關，偏好設定自動持久化儲存。
    - **全域字級躍升（WCAG AAA 高對比）**：
      - 下落字元節點放大至 **`64px` 巨幅框體** 與 **`2.3rem` 超大加粗字體**，夜間與弱視辨識極度清晰。
      - 虛擬鍵盤主按鍵放大至 **`17px`**、次要 Shift 符號放大至 **`14px 亮金高對比色`**。
@@ -84,8 +84,8 @@ node server.js
 打開瀏覽器前往：
 👉 **`http://localhost:3000`**
 
-- 點擊 **「MANUAL PILOT」** 或按空白鍵親自參戰。
-- 點擊 **「DEPLOY AI PILOT」** 派遣 AI 駕駛出征。
+- 點擊 **「🕹️ 親自參戰」** 或按空白鍵開始。
+- 點擊 **「🤖 啟動 AI 副駕駛」** 派遣 AI 駕駛出征。
 - 戰局結束後輸入呼號，透過 HTMX 將戰績登錄全球排行榜！
 
 ---
@@ -129,7 +129,7 @@ typing-shooter-htmx/
 ├── game.js                     # 遊戲主引擎、砲台旋轉、Web Audio 音效、AI 威脅演算法
 ├── server.js                   # 原生 Node.js 靜態檔案伺服器與 HTMX 排行榜 API
 ├── scores.json                 # 伺服器持久化戰績資料庫
-├── test-simulation.js          # 10 項核心機制自動化測試套件
+├── test-simulation.js          # 13 項核心機制自動化測試套件
 ├── test-live-battle.js         # 多波次連續戰鬥物理模擬測試
 ├── run-ai-match.js             # CLI 無頭 AI 錦標賽對戰腳本
 ├── package.json                # 專案設定與 NPM 腳本
