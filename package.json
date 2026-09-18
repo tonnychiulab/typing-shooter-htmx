@@ -1,0 +1,20 @@
+{
+  "name": "typing-shooter-htmx",
+  "version": "1.0.0",
+  "description": "Minimalist Cyberpunk Typing Shooter with HTMX Leaderboard & AI Auto-Pilot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test-simulation.js && node test-live-battle.js",
+    "bot": "node run-ai-match.js"
+  },
+  "keywords": [
+    "game",
+    "htmx",
+    "typing",
+    "ai-agent",
+    "cyberpunk"
+  ],
+  "author": "",
+  "license": "MIT"
+}

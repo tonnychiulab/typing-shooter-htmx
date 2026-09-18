@@ -1,0 +1,42 @@
+[
+  {
+    "id": "pilot-1",
+    "name": "NEO_CYPHER",
+    "score": 3850,
+    "maxCombo": 42,
+    "accuracy": 98,
+    "date": "2026-09-15"
+  },
+  {
+    "id": "pilot-2",
+    "name": "GHOST_01",
+    "score": 2980,
+    "maxCombo": 31,
+    "accuracy": 95,
+    "date": "2026-09-16"
+  },
+  {
+    "id": "pilot-3",
+    "name": "TRINITY",
+    "score": 2420,
+    "maxCombo": 28,
+    "accuracy": 92,
+    "date": "2026-09-17"
+  },
+  {
+    "id": "pilot-4",
+    "name": "ZERO_COOL",
+    "score": 1890,
+    "maxCombo": 22,
+    "accuracy": 89,
+    "date": "2026-09-17"
+  },
+  {
+    "id": "pilot-5",
+    "name": "ACID_BURN",
+    "score": 1450,
+    "maxCombo": 18,
+    "accuracy": 86,
+    "date": "2026-09-18"
+  }
+]

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Shooter - 極簡打字射擊遊戲</title>
+    <!-- 引入 HTMX 最新穩定版 -->
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- 頂部資訊看板 (由 HTMX 監聽自定義事件並自動 swap 局部更新) -->
+        <header id="hud">
+            <div class="hud-item">
+                <span class="hud-label">SCORE</span>
+                <span id="score-display" class="hud-value"
+                      hx-trigger="scoreUpdated from:body"
+                      hx-swap="innerHTML">0</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">COMBO</span>
+                <span id="combo-display" class="hud-value"
+                      hx-trigger="comboUpdated from:body"
+                      hx-swap="innerHTML">0x</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">HEALTH</span>
+                <div id="health-bar-container">
+                    <div id="health-bar"
+                         hx-trigger="healthUpdated from:body"
+                         hx-swap="outerHTML">
+                        <div class="health-fill" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hud-item ai-hud-panel">
+                <button id="ai-toggle-btn" class="ai-toggle-button" type="button" title="切換 AI 副駕駛接管 (快捷鍵 Tab)">
+                    <span class="ai-pulse-dot"></span>
+                    <span>AI PILOT:</span>
+                    <strong id="ai-status-label">OFF</strong>
+                    <span class="key-shortcut">[Tab]</span>
+                </button>
+                <select id="ai-model-select" class="ai-model-selector" title="選擇 AI 模型等級">
+                    <option value="rookie">🟢 ROOKIE BOT</option>
+                    <option value="veteran" selected>🟡 CYBER PRO</option>
+                    <option value="god">🔴 AGI GOD</option>
+                </select>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">STATUS</span>
+                <span id="status-display" class="hud-value status-ready"
+                      hx-trigger="statusUpdated from:body"
+                      hx-swap="innerHTML">READY</span>
+            </div>
+        </header>
+
+        <!-- 遊戲主戰場 -->
+        <main id="battlefield">
+            <!-- 瞄準器與砲台位於底部中央 -->
+            <div id="cannon">
+                <div class="cannon-barrel"></div>
+                <div class="cannon-base"></div>
+            </div>
+
+            <!-- 雷射光束與爆炸特效層 -->
+            <svg id="fx-layer"></svg>
+
+            <!-- 目標物生成容器 (動態被 DOM/HTMX 管理) -->
+            <div id="targets-container"></div>
+        </main>
+
+        <!-- 虛擬終端鍵盤 (供 AI 視覺凝視定位與玩家點擊/高亮回饋) -->
+        <section id="keyboard-dock">
+            <div id="virtual-keyboard">
+                <div id="ai-gaze-reticle" class="ai-gaze-reticle hidden">
+                    <div class="reticle-box"></div>
+                    <span class="reticle-label">AI GAZE</span>
+                </div>
+                <!-- 鍵盤列與按鍵將由 game.js 動態初始化 -->
+            </div>
+        </section>
+
+        <!-- 底部按鍵輸入即時回饋提示 -->
+        <footer id="input-hud">
+            <span class="label">LAST KEY:</span>
+            <span id="last-key-display" class="key-box">-</span>
+            <div class="ai-radar-section">
+                <span class="label">AI RADAR:</span>
+                <span id="ai-decision-display" class="ai-decision-ticker">STANDBY</span>
+            </div>
+            <span class="hint">Tab: 切換 AI 接管 | 支援全符號 Shift 鍵</span>
+        </footer>
+
+        <!-- 遊戲開始 / 說明覆蓋層 (全域最上層，不再受戰場高度限制) -->
+        <div id="overlay" class="overlay active">
+            <div class="modal">
+                <h1 class="title">TYPING DEFENDER</h1>
+                <p class="subtitle">打字防衛戰・極簡終端模式</p>
+                
+                <div class="char-sets-preview">
+                    <span class="badge">a-z</span>
+                    <span class="badge">A-Z</span>
+                    <span class="badge">0-9</span>
+                    <span class="badge">!@#$%-+=</span>
+                    <span class="badge">[]{}();:'",./?\|~`</span>
+                </div>
+
+                <div class="instructions">
+                    <p>🎯 螢幕上會出現飄落的字元目標</p>
+                    <p>⌨️ 按下對應按鍵進行精確鎖定射擊（區分大小寫與符號）</p>
+                    <p>🤖 可隨時開啟 AI 副駕駛接管鍵盤，視覺鎖定迎擊</p>
+                    <p>⚠️ 目標墜落到底部將扣除防禦生命值</p>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                    <button id="start-btn" class="glow-button">MANUAL PILOT [SPACE]</button>
+                    <button id="ai-launch-btn" class="glow-button ai-launch-btn">🤖 DEPLOY AI PILOT</button>
+                    <button id="view-leaderboard-btn" class="submit-record-btn"
+                            hx-get="/api/leaderboard" 
+                            hx-target="#start-leaderboard-box" 
+                            hx-swap="innerHTML">
+                        🏆 LEADERBOARD
+                    </button>
+                </div>
+                <div id="start-leaderboard-box" style="margin-top: 12px;"></div>
+            </div>
+        </div>
+
+        <!-- 遊戲結束對話框 -->
+        <div id="gameover-overlay" class="overlay hidden"
+             hx-trigger="gameOver from:body"
+             hx-swap="innerHTML">
+            <!-- HTMX 事件觸發時會動態載入結束統計資訊 -->
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
