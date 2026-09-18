@@ -120,7 +120,9 @@ npm test
 ## 📁 檔案架構
 
 ```text
-typing-shooter-htmx/
+├── docs/
+│   ├── SDD.md                  # 系統軟體設計說明書 (Software Design Document)
+│   └── WORKLOG.md              # 每日開發工作紀錄與進度日誌
 ├── assets/
 │   ├── screenshot-start.png    # 開始選單畫面截圖
 │   └── screenshot-gameplay.png # 遊戲進行與 AI 戰鬥畫面截圖
@@ -135,6 +137,13 @@ typing-shooter-htmx/
 ├── package.json                # 專案設定與 NPM 腳本
 └── README.md                   # 專案說明文件
 ```
+
+---
+
+## 📑 專案工程文件（Documentation）
+
+- 📘 **[系統軟體設計說明書 (SDD)](docs/SDD.md)**：包含系統架構圖 (Mermaid C4)、模組詳細設計、AI 威脅演算法、EMP 與長輩三大寶物機制、HUD 防擠壓響應式排版規則與資安規範。
+- 📋 **[開發工作紀錄 (Work Log)](docs/WORKLOG.md)**：詳細記錄今日開發歷程、重大架構決策、前後對比指標與 14 項自動化測試結果。
 
 ---
 
