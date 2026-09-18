@@ -339,10 +339,28 @@ async function runAutomatedTests() {
     if (game.currentGuidedChar !== 'a') throw new Error(`Expected guided char to be 'a', got ${game.currentGuidedChar}`);
     console.log('✅ Starter Treasure 3 Verified: Keyfinder Guide Light dynamically tracking urgent target [a].');
 
+    // Test Uppercase Target triggers Shift Guide Light
+    const upperTarget = { id: 'test-upper', char: 'A', x: 200, y: 400, speed: 50, element: new MockElement('div') };
+    game.targets.push(upperTarget);
+    game.updateKeyGuideLight();
+    if (game.currentGuidedChar !== 'A') throw new Error(`Expected guided char to be 'A', got ${game.currentGuidedChar}`);
+    console.log('✅ Keyfinder Guide Light dynamically tracking uppercase urgent target [A] with Shift indicator.');
+
     game.setA11yMode(false);
 
+    console.log('\n--- 14. Testing Virtual Keyboard Letter Case Alignment (Upper & Lower) ---');
+    const qKeyEntry = game.charToKeyMap.get('q');
+    if (!qKeyEntry) throw new Error('Key "q" not found in charToKeyMap');
+    if (!qKeyEntry.element.innerHTML.includes('<span class="vkey-sub">Q</span>')) {
+        throw new Error(`Expected vkey-sub Q, got ${qKeyEntry.element.innerHTML}`);
+    }
+    if (!qKeyEntry.element.innerHTML.includes('<span class="vkey-main">q</span>')) {
+        throw new Error(`Expected vkey-main q, got ${qKeyEntry.element.innerHTML}`);
+    }
+    console.log('✅ Virtual keyboard letter case alignment verified: [Q (sub) / q (main)] correctly paired!');
+
     console.log('\n==============================================');
-    console.log('🎉 ALL 13 AUTOMATED TEST SUITES PASSED 100%!');
+    console.log('🎉 ALL 14 AUTOMATED TEST SUITES PASSED 100%!');
     console.log('==============================================\n');
     process.exit(0);
 }

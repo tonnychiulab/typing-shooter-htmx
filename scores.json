@@ -38,5 +38,21 @@
     "maxCombo": 18,
     "accuracy": 86,
     "date": "2026-09-18"
+  },
+  {
+    "id": "rec-1789739053849",
+    "name": "AI_AGI_OVERLORD",
+    "score": 12,
+    "maxCombo": 1,
+    "accuracy": 100,
+    "date": "2026-09-18"
+  },
+  {
+    "id": "rec-1789739371607",
+    "name": "AI_AGI_OVERLORD",
+    "score": 12,
+    "maxCombo": 1,
+    "accuracy": 100,
+    "date": "2026-09-18"
   }
 ]

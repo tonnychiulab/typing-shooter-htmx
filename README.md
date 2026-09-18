@@ -129,7 +129,7 @@ typing-shooter-htmx/
 ├── game.js                     # 遊戲主引擎、砲台旋轉、Web Audio 音效、AI 威脅演算法
 ├── server.js                   # 原生 Node.js 靜態檔案伺服器與 HTMX 排行榜 API
 ├── scores.json                 # 伺服器持久化戰績資料庫
-├── test-simulation.js          # 13 項核心機制自動化測試套件
+├── test-simulation.js          # 14 項核心機制自動化測試套件
 ├── test-live-battle.js         # 多波次連續戰鬥物理模擬測試
 ├── run-ai-match.js             # CLI 無頭 AI 錦標賽對戰腳本
 ├── package.json                # 專案設定與 NPM 腳本

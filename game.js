@@ -900,6 +900,9 @@ class TypingGame {
             const entry = this.charToKeyMap.get(mostUrgent.char);
             if (entry && entry.element) {
                 entry.element.classList.add('key-guide-light');
+                if (entry.needsShift && this.shiftKeyElements) {
+                    this.shiftKeyElements.forEach(s => s.classList.add('key-guide-light'));
+                }
             }
         }
     }
@@ -909,6 +912,9 @@ class TypingGame {
             const entry = this.charToKeyMap.get(this.currentGuidedChar);
             if (entry && entry.element) {
                 entry.element.classList.remove('key-guide-light');
+            }
+            if (this.shiftKeyElements) {
+                this.shiftKeyElements.forEach(s => s.classList.remove('key-guide-light'));
             }
             this.currentGuidedChar = null;
         }
@@ -1159,7 +1165,7 @@ class TypingGame {
                 }
 
                 if (keyDef.shift && keyDef.key) {
-                    keyEl.innerHTML = `<span class="vkey-sub">${keyDef.shift}</span><span class="vkey-main">${keyDef.key.toUpperCase()}</span>`;
+                    keyEl.innerHTML = `<span class="vkey-sub">${keyDef.shift}</span><span class="vkey-main">${keyDef.key}</span>`;
                 } else if (keyDef.label) {
                     keyEl.innerHTML = `<span class="vkey-main">${keyDef.label}</span>`;
                 } else {
@@ -1174,7 +1180,15 @@ class TypingGame {
                         this.triggerEmpBomb();
                         return;
                     }
-                    const charToFire = keyDef.key;
+                    let charToFire = keyDef.key;
+                    if (keyDef.shift) {
+                        // 若場上有對應大寫/Shift目標且無小寫目標，優先打擊大寫目標
+                        const hasShiftTarget = this.targets.some(t => t.char === keyDef.shift);
+                        const hasNormalTarget = this.targets.some(t => t.char === keyDef.key);
+                        if (hasShiftTarget && !hasNormalTarget) {
+                            charToFire = keyDef.shift;
+                        }
+                    }
                     if (charToFire && charToFire.length === 1) {
                         this.handleKeyInput(charToFire);
                     }
