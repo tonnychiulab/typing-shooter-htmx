@@ -7,6 +7,11 @@
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
 ![HTMX](https://img.shields.io/badge/HTMX-3366CC?style=flat-square&logo=htmx&logoColor=white)
 ![NodeJS](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-brightgreen?style=for-the-badge&logo=github)](https://tonnychiulab.github.io/typing-shooter-htmx/)
+
+### 🌐 線上即玩（Play Online Now）
+👉 **[https://tonnychiulab.github.io/typing-shooter-htmx/](https://tonnychiulab.github.io/typing-shooter-htmx/)**
+*(免安裝任何環境，打開瀏覽器即可直接親自參戰或觀看 AI 自主作戰！)*
 
 ---
 
