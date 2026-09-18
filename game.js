@@ -60,7 +60,7 @@ const SYMBOL_ANNOTATIONS = {
 const AI_MODELS = {
     rookie: {
         name: 'AI_ROOKIE_V1',
-        label: '🟢 初級新手 (ROOKIE)',
+        label: '🟢 初級 (ROOKIE)',
         minDelay: 220,
         maxDelay: 320,
         accuracy: 0.88, // 偶爾手滑誤擊
@@ -68,7 +68,7 @@ const AI_MODELS = {
     },
     veteran: {
         name: 'AI_CYBER_PRO',
-        label: '🟡 賽博老兵 (PRO)',
+        label: '🟡 老兵 (PRO)',
         minDelay: 90,
         maxDelay: 150,
         accuracy: 0.98,
@@ -76,7 +76,7 @@ const AI_MODELS = {
     },
     god: {
         name: 'AI_AGI_OVERLORD',
-        label: '🔴 AGI 超神 (GOD)',
+        label: '🔴 AGI (GOD)',
         minDelay: 30,
         maxDelay: 55,
         accuracy: 1.0,
@@ -783,7 +783,7 @@ class TypingGame {
                         <input type="hidden" name="score" value="${this.score}">
                         <input type="hidden" name="maxCombo" value="${this.maxCombo}">
                         <input type="hidden" name="accuracy" value="${accuracy}">
-                        <input type="text" name="name" class="callsign-input" value="${defaultCallsign}" placeholder="請輸入駕駛員呼號 / 暱稱" maxlength="20" required autofocus autocomplete="off">
+                        <input type="text" name="name" class="callsign-input" value="${defaultCallsign}" placeholder="駕駛員呼號 (限16字)" maxlength="20" required autofocus autocomplete="off">
                         <button type="submit" class="submit-record-btn">
                             登錄英雄榜
                         </button>
@@ -1545,11 +1545,11 @@ function renderClientLeaderboardHtml(scores, highlightedId = null) {
                 <table class="leaderboard-table">
                     <thead>
                         <tr>
-                            <th>排名</th>
-                            <th>駕駛呼號</th>
-                            <th>得分</th>
-                            <th>最高連擊</th>
-                            <th>命中率</th>
+                            <th class="rank-col">排名</th>
+                            <th class="name-col">駕駛呼號</th>
+                            <th class="score-col">得分</th>
+                            <th class="combo-col">連擊</th>
+                            <th class="accuracy-col">命中率</th>
                         </tr>
                     </thead>
                     <tbody>

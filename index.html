@@ -12,65 +12,71 @@
     <div id="game-container">
         <!-- 頂部資訊看板 (由 HTMX 監聽自定義事件並自動 swap 局部更新) -->
         <header id="hud">
-            <div class="hud-item">
-                <span class="hud-label">得分</span>
-                <span id="score-display" class="hud-value"
-                      hx-trigger="scoreUpdated from:body"
-                      hx-swap="innerHTML">0</span>
-            </div>
-            <div class="hud-item">
-                <span class="hud-label">連擊</span>
-                <span id="combo-display" class="hud-value"
-                      hx-trigger="comboUpdated from:body"
-                      hx-swap="innerHTML">0x</span>
-            </div>
-            <div class="hud-item">
-                <span class="hud-label">生命值</span>
-                <div id="health-bar-container">
-                    <div id="health-bar"
-                         hx-trigger="healthUpdated from:body"
-                         hx-swap="outerHTML">
-                        <div class="health-fill" style="width: 100%;"></div>
+            <!-- 左側：戰況數據群組 -->
+            <div class="hud-group hud-stats-group">
+                <div class="hud-item">
+                    <span class="hud-label">得分</span>
+                    <span id="score-display" class="hud-value"
+                          hx-trigger="scoreUpdated from:body"
+                          hx-swap="innerHTML">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">連擊</span>
+                    <span id="combo-display" class="hud-value"
+                          hx-trigger="comboUpdated from:body"
+                          hx-swap="innerHTML">0x</span>
+                </div>
+                <div class="hud-item hud-health-item">
+                    <span class="hud-label">生命</span>
+                    <div id="health-bar-container">
+                        <div id="health-bar"
+                             hx-trigger="healthUpdated from:body"
+                             hx-swap="outerHTML">
+                            <div class="health-fill" style="width: 100%;"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div id="shield-container" class="hud-item shield-hud-panel" style="display: none;" title="長輩守護寶物：免死防禦護盾 (抵擋漏字扣血)">
-                <span class="hud-label">護盾</span>
-                <span id="shield-display" class="hud-value shield-value">🛡️ 0</span>
-            </div>
-            <div class="hud-item emp-hud-panel" title="每累積 60 分充能 1 枚 EMP 全域核彈 (按空白鍵 Space 施放)">
-                <span class="hud-label">EMP 核彈</span>
-                <div id="bomb-slots" class="bomb-slots">
-                    <span class="bomb-slot empty" id="bomb-slot-1">⚡</span>
-                    <span class="bomb-slot empty" id="bomb-slot-2">⚡</span>
-                    <span class="bomb-slot empty" id="bomb-slot-3" style="display: none;">⚡</span>
+                <div id="shield-container" class="hud-item shield-hud-panel" style="display: none;" title="長輩守護寶物：免死防禦護盾 (抵擋漏字扣血)">
+                    <span id="shield-display" class="hud-value shield-value">🛡️ 0</span>
                 </div>
-                <span id="bomb-hint" class="bomb-hint">[空白鍵]</span>
             </div>
-            <div class="hud-item ai-hud-panel">
-                <button id="ai-toggle-btn" class="ai-toggle-button" type="button" title="切換 AI 副駕駛接管 (快捷鍵 Tab)">
-                    <span class="ai-pulse-dot"></span>
-                    <span>AI 副駕駛:</span>
-                    <strong id="ai-status-label">關閉</strong>
-                    <span class="key-shortcut">[Tab]</span>
-                </button>
-                <select id="ai-model-select" class="ai-model-selector" title="選擇 AI 模型等級">
-                    <option value="rookie">🟢 初級新手 (ROOKIE)</option>
-                    <option value="veteran" selected>🟡 賽博老兵 (PRO)</option>
-                    <option value="god">🔴 AGI 超神 (GOD)</option>
-                </select>
-            </div>
-            <div class="hud-item a11y-hud-panel">
-                <button id="a11y-toggle-btn" class="a11y-toggle-button" type="button" title="長輩與無障礙大字模式切換">
-                    <span>👁️ 大字:</span>
-                    <strong id="a11y-status-label">關閉</strong>
-                </button>
-            </div>
-            <div class="hud-item">
-                <span class="hud-label">狀態</span>
-                <span id="status-display" class="hud-value status-ready"
-                      hx-trigger="statusUpdated from:body"
-                      hx-swap="innerHTML">準備就緒</span>
+
+            <!-- 右側：作戰與功能控制群組 -->
+            <div class="hud-group hud-controls-group">
+                <div class="hud-item emp-hud-panel" title="每累積 60 分充能 1 枚 EMP 全域核彈 (按空白鍵 Space 施放)">
+                    <span class="hud-label">EMP</span>
+                    <div id="bomb-slots" class="bomb-slots">
+                        <span class="bomb-slot empty" id="bomb-slot-1">⚡</span>
+                        <span class="bomb-slot empty" id="bomb-slot-2">⚡</span>
+                        <span class="bomb-slot empty" id="bomb-slot-3" style="display: none;">⚡</span>
+                    </div>
+                    <span id="bomb-hint" class="bomb-hint">[空白]</span>
+                </div>
+                <div class="hud-item ai-hud-panel">
+                    <button id="ai-toggle-btn" class="ai-toggle-button" type="button" title="切換 AI 副駕駛接管 (快捷鍵 Tab)">
+                        <span class="ai-pulse-dot"></span>
+                        <span>AI:</span>
+                        <strong id="ai-status-label">關閉</strong>
+                        <span class="key-shortcut">[Tab]</span>
+                    </button>
+                    <select id="ai-model-select" class="ai-model-selector" title="選擇 AI 模型等級">
+                        <option value="rookie">🟢 初級 (ROOKIE)</option>
+                        <option value="veteran" selected>🟡 老兵 (PRO)</option>
+                        <option value="god">🔴 AGI (GOD)</option>
+                    </select>
+                </div>
+                <div class="hud-item a11y-hud-panel">
+                    <button id="a11y-toggle-btn" class="a11y-toggle-button" type="button" title="長輩與無障礙大字模式切換">
+                        <span>👁️ 大字:</span>
+                        <strong id="a11y-status-label">關閉</strong>
+                    </button>
+                </div>
+                <div class="hud-item hud-status-item">
+                    <span class="hud-label">狀態</span>
+                    <span id="status-display" class="hud-value status-ready"
+                          hx-trigger="statusUpdated from:body"
+                          hx-swap="innerHTML">準備就緒</span>
+                </div>
             </div>
         </header>
 

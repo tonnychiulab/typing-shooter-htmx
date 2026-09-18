@@ -86,11 +86,11 @@ function renderLeaderboardHtml(scores, highlightedId = null) {
                 <table class="leaderboard-table">
                     <thead>
                         <tr>
-                            <th>排名</th>
-                            <th>駕駛呼號</th>
-                            <th>得分</th>
-                            <th>最高連擊</th>
-                            <th>命中率</th>
+                            <th class="rank-col">排名</th>
+                            <th class="name-col">駕駛呼號</th>
+                            <th class="score-col">得分</th>
+                            <th class="combo-col">連擊</th>
+                            <th class="accuracy-col">命中率</th>
                         </tr>
                     </thead>
                     <tbody>

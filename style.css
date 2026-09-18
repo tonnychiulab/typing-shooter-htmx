@@ -45,28 +45,50 @@ body {
     overflow: hidden;
 }
 
-/* 頂部 HUD 看板 */
+/* 頂部 HUD 看板 (自適應雙群組結構：左戰況、右控制) */
 #hud {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 24px;
+    padding: 10px 20px;
     background: var(--panel-bg);
     border-bottom: 1px solid var(--border-color);
     z-index: 10;
+    gap: 12px;
+    flex-wrap: nowrap;
+}
+
+.hud-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.hud-stats-group {
+    flex-shrink: 0;
+}
+
+.hud-controls-group {
+    flex-shrink: 0;
+    margin-left: auto;
+    gap: 10px;
 }
 
 .hud-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
+    white-space: nowrap; /* 核心防擠壓：中文字標籤絕對不折行！ */
+    flex-shrink: 0;
 }
 
 .hud-label {
     color: var(--text-secondary);
-    font-size: 0.75rem;
-    letter-spacing: 1.5px;
+    font-size: 0.74rem;
+    letter-spacing: 0.8px;
     font-weight: 700;
+    white-space: nowrap;
+    user-select: none;
 }
 
 .hud-value {
@@ -74,6 +96,8 @@ body {
     font-size: 1.25rem;
     font-weight: 700;
     text-shadow: 0 0 8px var(--accent-glow);
+    font-variant-numeric: tabular-nums; /* 等寬數字對齊防飄移 */
+    white-space: nowrap;
 }
 
 .status-ready { color: var(--accent-cyan); }
@@ -82,10 +106,10 @@ body {
 
 /* 生命值條 */
 #health-bar-container {
-    width: 120px;
-    height: 12px;
+    width: 80px;
+    height: 10px;
     background: #21262d;
-    border-radius: 6px;
+    border-radius: 5px;
     overflow: hidden;
     border: 1px solid var(--border-color);
 }
@@ -468,9 +492,10 @@ body {
     padding: 10px 14px;
     border-radius: 6px;
     outline: none;
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
     text-transform: uppercase;
-    width: 180px;
+    width: 220px;
+    max-width: 100%;
     transition: all 0.2s ease;
 }
 
@@ -547,29 +572,32 @@ body {
 .leaderboard-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.82rem;
+    font-size: 0.85rem;
 }
 
 .leaderboard-table th {
     color: var(--text-secondary);
-    font-size: 0.72rem;
-    letter-spacing: 1px;
-    padding: 6px 8px;
-    text-align: left;
+    font-size: 0.74rem;
+    letter-spacing: 0.5px;
+    padding: 8px 8px;
     border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
 }
 
 .leaderboard-table td {
     padding: 8px 8px;
     border-bottom: 1px solid #161b22;
     color: #c9d1d9;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
-.rank-col { width: 52px; }
-.name-col { font-weight: 700; color: #f0f6fc; }
-.score-col { color: var(--accent-cyan); font-weight: 700; }
-.combo-col { color: var(--accent-yellow); }
-.accuracy-col { color: var(--accent-green); }
+/* 欄位精準寬度與資料對齊 */
+.rank-col { width: 44px; text-align: center !important; }
+.name-col { text-align: left !important; font-weight: 700; color: #f0f6fc; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.score-col { text-align: right !important; color: var(--accent-cyan); font-weight: 700; }
+.combo-col { text-align: right !important; color: var(--accent-yellow); width: 68px; }
+.accuracy-col { text-align: right !important; color: var(--accent-green); width: 68px; }
 
 .rank-badge {
     display: inline-block;
@@ -1063,8 +1091,71 @@ body {
     box-shadow: 0 0 8px rgba(248, 81, 73, 0.7);
 }
 
-/* 行動裝置與小螢幕自適應 */
+/* ==========================================
+   響應式自適應規劃 (RESPONSIVE ADAPTATION SYSTEM)
+   ========================================== */
+
+/* 1. 中型螢幕、筆電與平板橫向 (769px ~ 1150px) */
+@media (max-width: 1150px) {
+    #hud {
+        padding: 8px 14px;
+        gap: 8px;
+    }
+    .hud-group {
+        gap: 10px;
+    }
+    .hud-label {
+        font-size: 0.7rem;
+        letter-spacing: 0.3px;
+    }
+    .hud-value {
+        font-size: 1.15rem;
+    }
+    #health-bar-container {
+        width: 90px;
+    }
+    .ai-model-selector {
+        padding: 3px 6px;
+        font-size: 0.72rem;
+    }
+    .ai-toggle-button, .a11y-toggle-button {
+        padding: 4px 8px;
+        font-size: 0.74rem;
+    }
+}
+
+/* 2. 行動裝置與窄螢幕 (<= 768px) */
 @media (max-width: 768px) {
+    #hud {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+    .hud-stats-group {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+    }
+    .hud-controls-group {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        margin-left: 0;
+    }
+    .hud-item {
+        gap: 4px;
+    }
+    .hud-label {
+        font-size: 0.68rem;
+        letter-spacing: 0;
+    }
+    .hud-value {
+        font-size: 1.05rem;
+    }
+    #health-bar-container {
+        width: 75px;
+    }
     #virtual-keyboard {
         gap: 2px;
     }
@@ -1082,11 +1173,24 @@ body {
     .vkey-space {
         font-size: 0.58rem;
     }
-    #hud {
-        padding: 8px 12px;
+    .score-form-inline {
+        flex-direction: column;
+        width: 100%;
     }
-    .hud-value {
-        font-size: 1rem;
+    .callsign-input {
+        width: 100%;
+    }
+    .submit-record-btn {
+        width: 100%;
+    }
+    .leaderboard-table {
+        font-size: 0.78rem;
+    }
+    .leaderboard-table th, .leaderboard-table td {
+        padding: 6px 4px;
+    }
+    .name-col {
+        max-width: 85px;
     }
 }
 
@@ -1106,15 +1210,20 @@ body {
     border-color: #58a6ff;
 }
 
-/* 頂部 HUD 大字化 */
+/* 頂部 HUD 大字化 (精準控制字號防溢位) */
 .a11y-mode .hud-label {
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     font-weight: 800;
 }
 
 .a11y-mode .hud-value {
-    font-size: 1.65rem;
+    font-size: 1.45rem;
     font-weight: 900;
+}
+
+.a11y-mode #health-bar-container {
+    height: 16px;
+    border-radius: 8px;
 }
 
 .a11y-mode .a11y-toggle-button {
