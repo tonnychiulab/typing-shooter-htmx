@@ -15,6 +15,10 @@
     "ai-agent",
     "cyberpunk"
   ],
-  "author": "",
+  "author": "tonnychiulab",
+  "contributors": [
+    "tonnychiulab (https://github.com/tonnychiulab)",
+    "Antigravity CLI (agy) - Powered by Gemini 3.8 Flash"
+  ],
   "license": "MIT"
 }

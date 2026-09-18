@@ -106,6 +106,17 @@ typing-shooter-htmx/
 
 ---
 
+## 👥 作者與致謝（Authors & Credits）
+
+本專案由人類工程師與 AI Agent 共同結對（Pair Programming）合作設計、全端實作、資安審查與部署完成：
+
+- 👤 **[tonnychiulab](https://github.com/tonnychiulab)** - 專案發起、架構決策、遊戲機制規劃與產品監督
+- 🤖 **Antigravity CLI (`agy`)** - 全自主全端架構、HTMX 事件整合、賽博虛擬鍵盤、AI 視覺凝視系統與資安加固
+  - **核心驅動模型**：`Gemini 3.8 Flash`
+  - **開發工具**：Google Antigravity CLI (`agy`)
+
+---
+
 ## 📜 授權協議
 
 MIT License.
