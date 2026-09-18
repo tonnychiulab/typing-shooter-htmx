@@ -1393,6 +1393,95 @@ class TypingGame {
             this.aiIsExecuting = false;
         }, delay);
     }
+
+    // 專供生成 README 與預覽戰鬥截圖之場景建構函式
+    setupScreenshotScene() {
+        if (this.startModal) {
+            this.startModal.classList.remove('active');
+            this.startModal.style.display = 'none';
+        }
+        this.isPlaying = true;
+        this.isAiPilot = true;
+        this.currentAiModelKey = 'veteran';
+        this.score = 2850;
+        this.combo = 26;
+        this.bombs = 2;
+        this.maxBombs = 2;
+        this.shields = 3;
+        this.health = 80;
+
+        if (this.shieldContainer) {
+            this.shieldContainer.style.display = 'flex';
+            this.updateShieldUI();
+        }
+
+        this.triggerHtmxUpdates();
+        this.updateBombUI();
+        this.updateAiUI();
+
+        const sampleTargets = [
+            { char: 'w', x: 380, y: 190, isLocked: true },
+            { char: '4', x: 450, y: 90 },
+            { char: 'K', x: 540, y: 120 },
+            { char: '@', x: 770, y: 150 },
+            { char: '{', x: 650, y: 240 },
+            { char: '7', x: 920, y: 220 },
+            { char: 'x', x: 250, y: 130 }
+        ];
+
+        sampleTargets.forEach((item, idx) => {
+            const el = document.createElement('div');
+            el.id = `mock-target-${idx}`;
+            let charType = 'char-lower';
+            if (CHAR_SETS.upper.includes(item.char)) charType = 'char-upper';
+            else if (CHAR_SETS.digits.includes(item.char)) charType = 'char-number';
+            else if (CHAR_SETS.symbols.includes(item.char)) charType = 'char-symbol';
+            el.className = `target-node ${charType}`;
+            if (item.isLocked) el.classList.add('ai-locked-target');
+            const subtag = SYMBOL_ANNOTATIONS[item.char] ? `<span class="symbol-subtag">${SYMBOL_ANNOTATIONS[item.char]}</span>` : '';
+            el.innerHTML = `<span class="char-glyph">${item.char}</span>${subtag}`;
+            el.style.left = `${item.x}px`;
+            el.style.top = `${item.y}px`;
+            this.targetsContainer.appendChild(el);
+            this.targets.push({ id: el.id, char: item.char, x: item.x, y: item.y, element: el });
+        });
+
+        // 瞄準鎖定目標並繪製持續高能雷射光束與同心衝擊環
+        const locked = sampleTargets.find(s => s.isLocked);
+        if (locked && this.cannon && this.battlefield && this.fxLayer) {
+            this.aimCannonAt(locked.x, locked.y);
+
+            const cannonRect = this.cannon.getBoundingClientRect();
+            const fieldRect = this.battlefield.getBoundingClientRect();
+            const startX = cannonRect.left - fieldRect.left + cannonRect.width / 2;
+            const startY = cannonRect.top - fieldRect.top;
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', startX);
+            line.setAttribute('y1', startY);
+            line.setAttribute('x2', locked.x);
+            line.setAttribute('y2', locked.y);
+            line.setAttribute('stroke', '#58a6ff');
+            line.setAttribute('stroke-width', '3.5');
+            line.setAttribute('filter', 'drop-shadow(0 0 10px #58a6ff)');
+            this.fxLayer.appendChild(line);
+
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', locked.x);
+            circle.setAttribute('cy', locked.y);
+            circle.setAttribute('r', '220');
+            circle.setAttribute('fill', 'none');
+            circle.setAttribute('stroke', 'rgba(248, 81, 73, 0.45)');
+            circle.setAttribute('stroke-width', '2');
+            this.fxLayer.appendChild(circle);
+
+            this.aiGazeAtKey('w');
+            this.lastKeyDisplay.textContent = 'w';
+            if (this.aiDecisionDisplay) {
+                this.aiDecisionDisplay.textContent = '鎖定目標 [w] 墜落倒數: 2.3秒';
+            }
+        }
+    }
 }
 
 // ==========================================
@@ -1528,6 +1617,11 @@ if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {
         window.game = new TypingGame();
         initStaticHostInterceptors();
+
+        const urlParams = typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search) : null;
+        if (urlParams && urlParams.get('mode') === 'screenshot-battle') {
+            window.game.setupScreenshotScene();
+        }
     });
 }
 
