@@ -653,36 +653,70 @@
     // ── 虛擬鍵盤構建與動畫 ───────────────────────────────────────────────────
     buildVirtualKeyboard() {
         if (!this.virtualKeyboard) return;
-        this.virtualKeyboard.innerHTML = '';
-        this.charToKeyMap.clear();
+        this.charToKeyMap = new Map();
         this.shiftKeyElements = [];
 
-        KEYBOARD_LAYOUT.forEach(row => {
+        // 保留 reticle 節點
+        const reticle = this.aiGazeReticle;
+        this.virtualKeyboard.innerHTML = '';
+        if (reticle) this.virtualKeyboard.appendChild(reticle);
+
+        KEYBOARD_LAYOUT.forEach((rowDef, rowIdx) => {
             const rowEl = document.createElement('div');
-            rowEl.className = 'vkey-row';
+            rowEl.className = 'keyboard-row';
+            rowEl.id = `kb-row-${rowIdx + 1}`;
 
-            row.forEach(item => {
-                const keyEl = document.createElement('div');
-                keyEl.className = `vkey ${item.width ? 'vkey-' + item.width : ''}`;
+            rowDef.forEach(keyDef => {
+                const keyEl = document.createElement('button');
+                keyEl.type = 'button';
+                let widthClass = '';
+                if (keyDef.width) widthClass = `vkey-${keyDef.width}`;
+                keyEl.className = `vkey ${widthClass}`;
 
-                if (item.isShift) {
+                if (keyDef.isShift) {
                     this.shiftKeyElements.push(keyEl);
                 }
-                if (item.key === ' ') {
-                    this.spaceKeyElement = keyEl;
-                }
 
-                if (item.shift) {
-                    keyEl.innerHTML = `<span class="vkey-sub">${item.shift}</span><span class="vkey-main">${item.key}</span>`;
+                if (keyDef.shift && keyDef.key) {
+                    keyEl.innerHTML = `<span class="vkey-sub">${keyDef.shift}</span><span class="vkey-main">${keyDef.key}</span>`;
+                } else if (keyDef.label) {
+                    keyEl.innerHTML = `<span class="vkey-main">${keyDef.label}</span>`;
                 } else {
-                    keyEl.innerHTML = `<span class="vkey-main">${item.label || item.key}</span>`;
+                    keyEl.innerHTML = `<span class="vkey-main">${keyDef.key}</span>`;
                 }
 
-                if (item.key) {
-                    this.charToKeyMap.set(item.key, { element: keyEl, isShift: false });
+                // 註冊滑鼠/觸控點擊事件（玩家也可點擊虛擬鍵盤操作）
+                keyEl.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (!this.isPlaying) return;
+                    if (keyDef.key === ' ' && this.bombs > 0) {
+                        this.triggerEmpBomb();
+                        return;
+                    }
+                    let charToFire = keyDef.key;
+                    if (keyDef.shift) {
+                        // 若場上有對應大寫/Shift目標且無小寫目標，優先打擊大寫目標
+                        const hasShiftTarget = this.targets.some(t => t.char === keyDef.shift);
+                        const hasNormalTarget = this.targets.some(t => t.char === keyDef.key);
+                        if (hasShiftTarget && !hasNormalTarget) {
+                            charToFire = keyDef.shift;
+                        }
+                    }
+                    if (charToFire && charToFire.length === 1) {
+                        this.handleKeyInput(charToFire);
+                    }
+                });
+
+                // 註冊字元對映
+                if (keyDef.key && keyDef.key.length === 1) {
+                    this.charToKeyMap.set(keyDef.key, { element: keyEl, needsShift: false, isShift: false });
                 }
-                if (item.shift) {
-                    this.charToKeyMap.set(item.shift, { element: keyEl, isShift: true });
+                if (keyDef.shift && keyDef.shift.length === 1) {
+                    this.charToKeyMap.set(keyDef.shift, { element: keyEl, needsShift: true, isShift: true });
+                }
+                if (keyDef.key === ' ') {
+                    this.charToKeyMap.set(' ', { element: keyEl, needsShift: false, isShift: false });
+                    this.spaceKeyElement = keyEl;
                 }
 
                 rowEl.appendChild(keyEl);
@@ -696,15 +730,15 @@
         const entry = this.charToKeyMap.get(keyChar);
         if (!entry) return;
 
-        entry.element.classList.add('vkey-active');
-        if (entry.isShift) {
-            this.shiftKeyElements.forEach(el => el.classList.add('vkey-active-shift'));
+        entry.element.classList.add('vkey-pressed', 'vkey-active');
+        if (entry.isShift || entry.needsShift) {
+            this.shiftKeyElements.forEach(el => el.classList.add('vkey-shift-active', 'vkey-active-shift'));
         }
 
         setTimeout(() => {
-            entry.element.classList.remove('vkey-active');
-            if (entry.isShift) {
-                this.shiftKeyElements.forEach(el => el.classList.remove('vkey-active-shift'));
+            entry.element.classList.remove('vkey-pressed', 'vkey-active');
+            if (entry.isShift || entry.needsShift) {
+                this.shiftKeyElements.forEach(el => el.classList.remove('vkey-shift-active', 'vkey-active-shift'));
             }
         }, 120);
     }
