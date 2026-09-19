@@ -247,6 +247,12 @@
         if (this.targetsContainer) this.targetsContainer.innerHTML = '';
         if (this.fxLayer) this.fxLayer.innerHTML = '';
 
+        clearTimeout(this.barrelRecoilTimer);
+        clearTimeout(this.barrelResetTimer);
+        if (this.cannonBarrel) {
+            this.cannonBarrel.style.transform = 'rotate(0deg)';
+        }
+
         if (this.startModal) this.startModal.classList.add('hidden');
         if (this.gameOverOverlay) this.gameOverOverlay.classList.add('hidden');
 
@@ -442,29 +448,55 @@
     shootLaser(target) {
         this.playLaserSound();
 
-        const cannonBaseX = this.battlefield ? this.battlefield.clientWidth / 2 : 400;
-        const cannonBaseY = this.battlefield ? this.battlefield.clientHeight - 30 : 570;
+        const pivotX = this.battlefield ? this.battlefield.clientWidth / 2 : 400;
+        const pivotY = this.battlefield ? this.battlefield.clientHeight - 16 : 584;
 
-        const targetCenterX = target.x + 20;
-        const targetCenterY = target.y + 20;
+        const halfSize = this.isA11yMode ? 34 : 22;
+        const targetCenterX = target.x + halfSize;
+        const targetCenterY = target.y + halfSize;
 
-        // 計算砲台轉向角度
-        const dx = targetCenterX - cannonBaseX;
-        const dy = targetCenterY - cannonBaseY;
+        // 計算砲台轉向角度與單位方向向量
+        const dx = targetCenterX - pivotX;
+        const dy = targetCenterY - pivotY;
+        const dist = Math.hypot(dx, dy) || 1;
+        const dirX = dx / dist;
+        const dirY = dy / dist;
+
         const angleRad = Math.atan2(dy, dx);
         const angleDeg = angleRad * (180 / Math.PI) + 90;
 
+        // 砲管口端點（自底座旋轉中心沿發射方向延伸 24px 管長）
+        const barrelLen = 24;
+        const muzzleX = pivotX + dirX * barrelLen;
+        const muzzleY = pivotY + dirY * barrelLen;
+
         if (this.cannonBarrel) {
-            this.cannonBarrel.style.transform = `translateX(-50%) rotate(${angleDeg}deg)`;
+            // 瞬間對準目標並產生微型機械後座力 (scaleY 縮短)
+            this.cannonBarrel.style.transform = `rotate(${angleDeg.toFixed(1)}deg) scaleY(0.82)`;
+
+            clearTimeout(this.barrelRecoilTimer);
+            this.barrelRecoilTimer = setTimeout(() => {
+                if (this.cannonBarrel) {
+                    this.cannonBarrel.style.transform = `rotate(${angleDeg.toFixed(1)}deg) scaleY(1)`;
+                }
+            }, 45);
+
+            // 閒置自動回正：若 350ms 內未再射擊，平滑歸正為垂直 0 度
+            clearTimeout(this.barrelResetTimer);
+            this.barrelResetTimer = setTimeout(() => {
+                if (this.cannonBarrel) {
+                    this.cannonBarrel.style.transform = 'rotate(0deg) scaleY(1)';
+                }
+            }, 350);
         }
 
-        // 繪製動態雷射 SVG 光束
+        // 繪製動態雷射 SVG 光束（從砲管口 muzzle 精確射向目標中心）
         const svgNS = 'http://www.w3.org/2000/svg';
         const line = document.createElementNS(svgNS, 'line');
-        line.setAttribute('x1', cannonBaseX);
-        line.setAttribute('y1', cannonBaseY - 10);
-        line.setAttribute('x2', targetCenterX);
-        line.setAttribute('y2', targetCenterY);
+        line.setAttribute('x1', muzzleX.toFixed(1));
+        line.setAttribute('y1', muzzleY.toFixed(1));
+        line.setAttribute('x2', targetCenterX.toFixed(1));
+        line.setAttribute('y2', targetCenterY.toFixed(1));
         line.setAttribute('stroke', '#58a6ff');
         line.setAttribute('stroke-width', '4');
         line.setAttribute('stroke-linecap', 'round');
@@ -488,6 +520,12 @@
         this.isPlaying = false;
         clearTimeout(this.spawnTimer);
         this.stopAiLoop();
+
+        clearTimeout(this.barrelRecoilTimer);
+        clearTimeout(this.barrelResetTimer);
+        if (this.cannonBarrel) {
+            this.cannonBarrel.style.transform = 'rotate(0deg)';
+        }
 
         this.targets.forEach(t => t.element.remove());
         this.targets = [];

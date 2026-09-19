@@ -68,3 +68,16 @@ stateDiagram-v2
   * 獲得消滅目標的全部累加分數，且**連擊數不中斷**。
   * 螢幕產生全域青白色 EMP 衝擊波光效（持續 400ms）。
   * 若核彈數為 0，按下空白鍵必須安全防護（不得拋錯、不得清空畫面）。
+
+---
+
+### 5. 砲塔瞄準、砲口向量定位與後座力回饋 (Turret Aiming & Recoil Specification)
+
+* **旋轉軸心對齊**：
+  * 砲管（`.cannon-barrel`）預設由父層 Flexbox 置中，**嚴禁在 transform 疊加 `translateX(-50%)`**，確保底座中心軸與 `transform-origin: bottom center` 完美同心。
+* **砲口動態發射點計算**：
+  * 雷射光束 SVG 起點嚴禁寫死在砲台底座。必須由單位方向向量 $\vec{d} = \frac{\Delta \vec{p}}{\|\Delta \vec{p}\|}$ 乘上管長 $L=24\text{px}$，精確推導出砲口頂端座標：
+    $$x_{\text{muzzle}} = x_{\text{pivot}} + d_x \cdot L, \quad y_{\text{muzzle}} = y_{\text{pivot}} + d_y \cdot L$$
+* **機械後座力與閒置回正**：
+  * 擊發瞬間：砲管對準目標角度，並於 45ms 內縮短至 `scaleY(0.82)` 產生後退打擊感，隨後彈回。
+  * 閒置自動回正：若連續 350ms 未有任何射擊，砲管平滑歸正為垂直 0 度警戒姿態。
