@@ -89,23 +89,48 @@
     function initStaticHostInterceptors() {
         if (typeof document === 'undefined' || !document.body) return;
 
+        // 綁定「查看英雄榜」按鈕直接點擊事件（兼具直接展開/收合 Toggle 效果，防範離線或 HTMX 事件異常）
+        const viewLeaderboardBtn = document.getElementById('view-leaderboard-btn');
+        const startLeaderboardBox = document.getElementById('start-leaderboard-box');
+        if (viewLeaderboardBtn && startLeaderboardBox) {
+            viewLeaderboardBtn.addEventListener('click', (e) => {
+                const isStaticHost = typeof window !== 'undefined' &&
+                    (window.location.hostname.endsWith('github.io') ||
+                     window.location.protocol === 'file:' ||
+                     window.location.protocol === 'blob:');
+                if (isStaticHost) {
+                    e.preventDefault();
+                    if (startLeaderboardBox.children.length > 0 && startLeaderboardBox.style.display !== 'none') {
+                        startLeaderboardBox.style.display = 'none';
+                    } else {
+                        startLeaderboardBox.style.display = 'block';
+                        const scores = getClientScores();
+                        startLeaderboardBox.innerHTML = renderClientLeaderboardHtml(scores);
+                    }
+                }
+            });
+        }
+
         document.body.addEventListener('htmx:beforeRequest', (evt) => {
             const isStaticHost = typeof window !== 'undefined' &&
                 (window.location.hostname.endsWith('github.io') ||
-                 window.location.protocol === 'file:');
+                 window.location.protocol === 'file:' ||
+                 window.location.protocol === 'blob:');
 
             if (isStaticHost) {
-                const detail = evt.detail;
+                const detail = evt.detail || {};
                 const target = detail.target;
-                const path = detail.path || '';
+                const path = detail.path || detail.requestConfig?.path || detail.elt?.getAttribute('hx-get') || detail.elt?.getAttribute('hx-post') || '';
 
                 if (path.includes('/api/leaderboard')) {
                     evt.preventDefault();
-                    const scores = getClientScores();
-                    target.innerHTML = renderClientLeaderboardHtml(scores);
+                    if (target) {
+                        const scores = getClientScores();
+                        target.innerHTML = renderClientLeaderboardHtml(scores);
+                    }
                 } else if (path.includes('/api/score')) {
                     evt.preventDefault();
-                    const params = detail.parameters || {};
+                    const params = detail.parameters || detail.requestConfig?.parameters || {};
                     const name = String(params.name || 'ROOKIE').toUpperCase().slice(0, 16);
                     const score = parseInt(params.score, 10) || 0;
                     const maxCombo = parseInt(params.maxCombo, 10) || 0;
@@ -116,7 +141,9 @@
                     scores.push({ id: newId, name, score, maxCombo, accuracy });
                     saveClientScores(scores);
 
-                    target.innerHTML = renderClientLeaderboardHtml(scores, newId);
+                    if (target) {
+                        target.innerHTML = renderClientLeaderboardHtml(scores, newId);
+                    }
                     const subBox = document.getElementById('submission-box');
                     if (subBox) {
                         subBox.innerHTML = '<p style="color: var(--accent-green); font-weight: 700;">✓ 戰績已同步登錄至 CYBER_NET 本地雲端榜！</p>';
@@ -126,8 +153,9 @@
         });
 
         document.body.addEventListener('htmx:responseError', (evt) => {
-            const detail = evt.detail;
-            if (detail && detail.path && detail.path.includes('/api/leaderboard') && detail.target) {
+            const detail = evt.detail || {};
+            const path = detail.path || detail.requestConfig?.path || detail.xhr?.responseURL || detail.elt?.getAttribute('hx-get') || '';
+            if (path.includes('/api/leaderboard') && detail.target) {
                 const scores = getClientScores();
                 detail.target.innerHTML = renderClientLeaderboardHtml(scores);
             }

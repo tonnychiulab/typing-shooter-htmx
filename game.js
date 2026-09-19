@@ -33,7 +33,7 @@
 
     // 頁面加載完成後實體化
     if (typeof document !== 'undefined') {
-        document.addEventListener('DOMContentLoaded', () => {
+        const boot = () => {
             if (!window.game && typeof TypingGame === 'function') {
                 window.game = new TypingGame();
             }
@@ -45,7 +45,13 @@
             if (urlParams && urlParams.get('mode') === 'screenshot-battle' && window.game) {
                 window.game.setupScreenshotScene();
             }
-        });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', boot);
+        } else {
+            boot();
+        }
     }
 
     if (typeof module !== 'undefined' && module.exports) {

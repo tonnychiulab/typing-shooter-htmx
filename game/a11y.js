@@ -41,8 +41,10 @@
 
             if (typeof document !== 'undefined' && document.body) {
                 if (this.isA11yMode) {
+                    document.body.classList.add('a11y-mode');
                     document.body.classList.add('a11y-big-font');
                 } else {
+                    document.body.classList.remove('a11y-mode');
                     document.body.classList.remove('a11y-big-font');
                 }
             }
@@ -50,6 +52,20 @@
             const text = this.isA11yMode ? '開啟' : '關閉';
             if (this.a11yStatusLabel) this.a11yStatusLabel.textContent = text;
             if (this.modalA11yLabel) this.modalA11yLabel.textContent = text;
+
+            if (this.a11yToggleBtn) {
+                this.a11yToggleBtn.classList.toggle('active', this.isA11yMode);
+            }
+            if (this.modalA11yBtn) {
+                this.modalA11yBtn.classList.toggle('active', this.isA11yMode);
+                if (this.isA11yMode) {
+                    this.modalA11yBtn.style.background = 'rgba(235, 172, 38, 0.25)';
+                    this.modalA11yBtn.style.boxShadow = '0 0 10px rgba(235, 172, 38, 0.4)';
+                } else {
+                    this.modalA11yBtn.style.background = '';
+                    this.modalA11yBtn.style.boxShadow = '';
+                }
+            }
 
             if (!this.isA11yMode) {
                 this.clearKeyGuideLight();

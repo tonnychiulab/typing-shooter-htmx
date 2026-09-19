@@ -205,7 +205,8 @@ const requiredIds = [
     'ai-launch-btn', 'ai-decision-display', 'virtual-keyboard', 'ai-gaze-reticle',
     'bomb-slot-1', 'bomb-slot-2', 'bomb-slot-3', 'bomb-hint',
     'shield-container', 'shield-display', 'a11y-toggle-btn', 'a11y-status-label',
-    'modal-a11y-toggle-btn', 'modal-a11y-label'
+    'modal-a11y-toggle-btn', 'modal-a11y-label',
+    'view-leaderboard-btn', 'start-leaderboard-box'
 ];
 
 requiredIds.forEach(id => getOrCreateElement(id));
@@ -568,8 +569,50 @@ async function runAutomatedTests() {
     if (allVKeys.length === 0) throw new Error('Real querySelectorAll failed to find .vkey items in virtualKeyboard');
     console.log(`✅ Real DOM tree traversal verified: querySelector found [${mainKeySpan.textContent}], querySelectorAll found ${allVKeys.length} virtual keys!`);
 
+    console.log('\n--- 19. Testing A11y Dual Button Sync (HUD + Modal) & Static Host Leaderboard ---');
+    const hudA11yBtn = elementsById.get('a11y-toggle-btn');
+    const modalA11yBtn = elementsById.get('modal-a11y-toggle-btn');
+
+    // Test enabling A11y mode
+    game.setA11yMode(true);
+    if (!global.document.body.classList.contains('a11y-mode')) {
+        throw new Error('Expected document.body to contain a11y-mode class');
+    }
+    if (!hudA11yBtn.classList.contains('active') || !modalA11yBtn.classList.contains('active')) {
+        throw new Error('Both HUD and Modal A11y buttons should have active class');
+    }
+    console.log('✅ A11y enabled: document.body contains a11y-mode and both buttons are active!');
+
+    // Test disabling A11y mode
+    game.setA11yMode(false);
+    if (global.document.body.classList.contains('a11y-mode')) {
+        throw new Error('Expected document.body to remove a11y-mode class');
+    }
+    if (hudA11yBtn.classList.contains('active') || modalA11yBtn.classList.contains('active')) {
+        throw new Error('Both HUD and Modal A11y buttons should remove active class');
+    }
+    console.log('✅ A11y disabled: document.body removed a11y-mode and both buttons are inactive!');
+
+    // Test Static Host Leaderboard Interception
+    const { initStaticHostInterceptors } = require('./game/static-host.js');
+    initStaticHostInterceptors();
+    const lbBtn = elementsById.get('view-leaderboard-btn');
+    const lbBox = elementsById.get('start-leaderboard-box');
+    if (lbBtn && lbBox) {
+        global.window.location = { hostname: 'tonnychiulab.github.io', protocol: 'https:' };
+        let defaultPrevented = false;
+        lbBtn.emit('click', { preventDefault: () => { defaultPrevented = true; } });
+        if (!lbBox.innerHTML.includes('CYBER_NET') || !lbBox.innerHTML.includes('leaderboard-table')) {
+            throw new Error('Static host leaderboard click failed to render table into start-leaderboard-box');
+        }
+        if (!defaultPrevented) {
+            throw new Error('Expected click event preventDefault to be called on static host');
+        }
+        console.log('✅ Static Host Leaderboard: Successfully rendered CYBER_NET leaderboard on button click!');
+    }
+
     console.log('\n==============================================');
-    console.log('🎉 ALL 18 AUTOMATED TEST SUITES PASSED 100%!');
+    console.log('🎉 ALL 19 AUTOMATED TEST SUITES PASSED 100%!');
     console.log('==============================================\n');
     process.exit(0);
 }
