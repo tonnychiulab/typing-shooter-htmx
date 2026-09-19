@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Typing Shooter - 極簡打字射擊遊戲</title>
+    <title>Typing Defender - 極簡賽博打字防衛戰</title>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <!-- PWA Meta -->
+    <meta name="theme-color" content="#58a6ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Typing Defender">
+    <link rel="apple-touch-icon" href="assets/icon-192.jpg">
     <!-- 引入 HTMX 最新穩定版 -->
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <link rel="stylesheet" href="style.css">
@@ -29,9 +37,7 @@
                 <div class="hud-item hud-health-item">
                     <span class="hud-label">生命</span>
                     <div id="health-bar-container">
-                        <div id="health-bar"
-                             hx-trigger="healthUpdated from:body"
-                             hx-swap="outerHTML">
+                        <div id="health-bar">
                             <div class="health-fill" style="width: 100%;"></div>
                         </div>
                     </div>
@@ -169,6 +175,51 @@
         </div>
     </div>
 
+    <!-- 遊戲模組化引擎腳本 -->
+    <script src="game/constants.js"></script>
+    <script src="game/audio.js"></script>
+    <script src="game/a11y.js"></script>
+    <script src="game/ai-pilot.js"></script>
+    <script src="game/static-host.js"></script>
+    <script src="game/engine.js"></script>
     <script src="game.js"></script>
+
+    <!-- PWA Service Worker 註冊 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // 自動偵測 scope（本地 '/' vs GitHub Pages '/typing-shooter-htmx/'）
+                const swUrl = new URL('sw.js', window.location.href).href;
+                navigator.serviceWorker.register(swUrl).then((reg) => {
+                    console.log('[PWA] Service Worker registered. Scope:', reg.scope);
+
+                    // 偵測新版本 SW 等待安裝 → 顯示更新提示
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // 顯示遊戲風格的更新提示
+                                const banner = document.createElement('div');
+                                banner.style.cssText = [
+                                    'position:fixed', 'bottom:16px', 'left:50%',
+                                    'transform:translateX(-50%)', 'z-index:9999',
+                                    'background:#161b22', 'border:1px solid #58a6ff',
+                                    'color:#58a6ff', 'padding:10px 20px',
+                                    'border-radius:6px', 'font-family:monospace',
+                                    'font-size:0.85rem', 'cursor:pointer',
+                                    'box-shadow:0 0 12px rgba(88,166,255,0.4)'
+                                ].join(';');
+                                banner.textContent = '⚡ 新版本已就緒，點此立即更新';
+                                banner.onclick = () => { newWorker.postMessage({ type: 'SKIP_WAITING' }); location.reload(); };
+                                document.body.appendChild(banner);
+                            }
+                        });
+                    });
+                }).catch((err) => {
+                    console.warn('[PWA] Service Worker registration failed:', err);
+                });
+            });
+        }
+    </script>
 </body>
 </html>

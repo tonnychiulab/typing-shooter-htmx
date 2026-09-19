@@ -7,34 +7,130 @@ const { EventEmitter } = require('node:events');
 
 console.log('🧪 [TEST SUITE STARTING] Initializing virtual environment...');
 
-// 1. Mock minimal browser environment
+// 1. Mock minimal browser environment with hierarchical DOM traversal
+function parseSimpleHTML(html, parent) {
+    if (!html || typeof html !== 'string') return [];
+    const children = [];
+    // Match tags: <tag attr="val">inner</tag> or <tag attr="val"/>
+    const tagRegex = /<([a-zA-Z0-9-]+)([^>]*)>(.*?)<\/\1>|<([a-zA-Z0-9-]+)([^>]*)\/?>/gs;
+    let match;
+    while ((match = tagRegex.exec(html)) !== null) {
+        const tagName = match[1] || match[4];
+        const rawAttrs = match[2] || match[5] || '';
+        const innerContent = match[3] || '';
+
+        const el = new MockElement(tagName);
+        el.parentNode = parent;
+
+        // Parse class
+        const classMatch = rawAttrs.match(/class=["']([^"']*)["']/);
+        if (classMatch) {
+            el.className = classMatch[1];
+        }
+
+        // Parse id
+        const idMatch = rawAttrs.match(/id=["']([^"']*)["']/);
+        if (idMatch) {
+            el.id = idMatch[1];
+        }
+
+        // Parse style
+        const styleMatch = rawAttrs.match(/style=["']([^"']*)["']/);
+        if (styleMatch) {
+            el.setAttribute('style', styleMatch[1]);
+        }
+
+        // Recursively parse inner HTML or set textContent
+        if (innerContent.includes('<')) {
+            el.children = parseSimpleHTML(innerContent, el);
+        } else {
+            el.textContent = innerContent.trim();
+        }
+
+        children.push(el);
+    }
+    return children;
+}
+
 class MockElement extends EventEmitter {
-    constructor(tagName, id = '') {
+    constructor(tagName = 'DIV', id = '') {
         super();
         this.tagName = tagName.toUpperCase();
         this.id = id;
-        this.className = '';
+        this._className = '';
         this.classList = {
             classes: new Set(),
-            add: (c) => this.classList.classes.add(c),
-            remove: (c) => this.classList.classes.delete(c),
+            add: (...cs) => {
+                cs.forEach(c => c && this.classList.classes.add(c));
+                this._className = Array.from(this.classList.classes).join(' ');
+            },
+            remove: (...cs) => {
+                cs.forEach(c => this.classList.classes.delete(c));
+                this._className = Array.from(this.classList.classes).join(' ');
+            },
+            toggle: (c, force) => {
+                const has = this.classList.classes.has(c);
+                const shouldAdd = force !== undefined ? force : !has;
+                if (shouldAdd) this.classList.add(c);
+                else this.classList.remove(c);
+                return shouldAdd;
+            },
             contains: (c) => this.classList.classes.has(c)
         };
         this.style = {};
         this.children = [];
-        this.innerHTML = '';
+        this.parentNode = null;
+        this._innerHTML = '';
         this.textContent = '';
         this.clientWidth = 800;
         this.clientHeight = 600;
         this.value = '';
     }
 
+    get className() {
+        return this._className;
+    }
+
+    set className(val) {
+        this._className = val || '';
+        this.classList.classes = new Set(this._className.split(/\s+/).filter(Boolean));
+    }
+
+    get innerHTML() {
+        return this._innerHTML;
+    }
+
+    set innerHTML(val) {
+        this._innerHTML = val;
+        this.children = parseSimpleHTML(val, this);
+        if (this.children.length === 0 && typeof val === 'string') {
+            this.textContent = val.replace(/<[^>]*>/g, '');
+        }
+    }
+
     appendChild(child) {
+        if (!child) return null;
+        if (child.parentNode && child.parentNode.removeChild) {
+            child.parentNode.removeChild(child);
+        }
+        child.parentNode = this;
         this.children.push(child);
         return child;
     }
 
+    removeChild(child) {
+        const idx = this.children.indexOf(child);
+        if (idx !== -1) {
+            this.children.splice(idx, 1);
+            child.parentNode = null;
+        }
+        return child;
+    }
+
     remove() {
+        if (this.parentNode && this.parentNode.removeChild) {
+            this.parentNode.removeChild(this);
+        }
         this.isRemoved = true;
     }
 
@@ -54,12 +150,37 @@ class MockElement extends EventEmitter {
         this.off(evt, cb);
     }
 
+    matchesSelector(sel) {
+        if (!sel) return false;
+        if (sel.startsWith('.')) {
+            return this.classList.contains(sel.slice(1));
+        }
+        if (sel.startsWith('#')) {
+            return this.id === sel.slice(1);
+        }
+        return this.tagName.toLowerCase() === sel.toLowerCase();
+    }
+
     querySelector(sel) {
-        return new MockElement('span');
+        for (const child of this.children) {
+            if (child.matchesSelector && child.matchesSelector(sel)) return child;
+            if (child.querySelector) {
+                const found = child.querySelector(sel);
+                if (found) return found;
+            }
+        }
+        return null;
     }
 
     querySelectorAll(sel) {
-        return [];
+        const results = [];
+        for (const child of this.children) {
+            if (child.matchesSelector && child.matchesSelector(sel)) results.push(child);
+            if (child.querySelectorAll) {
+                results.push(...child.querySelectorAll(sel));
+            }
+        }
+        return results;
     }
 
     getBoundingClientRect() {
@@ -75,20 +196,25 @@ function getOrCreateElement(id, tag = 'div') {
     return elementsById.get(id);
 }
 
-// Pre-create elements defined in index.html
+// Pre-create all elements defined in index.html & HUD
 const requiredIds = [
     'battlefield', 'targets-container', 'fx-layer', 'cannon',
     'overlay', 'gameover-overlay', 'last-key-display', 'start-btn',
     'score-display', 'combo-display', 'health-bar', 'health-bar-container',
     'status-display', 'ai-toggle-btn', 'ai-status-label', 'ai-model-select',
-    'ai-launch-btn', 'ai-decision-display', 'virtual-keyboard', 'ai-gaze-reticle'
+    'ai-launch-btn', 'ai-decision-display', 'virtual-keyboard', 'ai-gaze-reticle',
+    'bomb-slot-1', 'bomb-slot-2', 'bomb-slot-3', 'bomb-hint',
+    'shield-container', 'shield-display', 'a11y-toggle-btn', 'a11y-status-label',
+    'modal-a11y-toggle-btn', 'modal-a11y-label'
 ];
 
 requiredIds.forEach(id => getOrCreateElement(id));
 
-// Cannon barrel
+// Cannon barrel & health fill
 const cannonBarrel = new MockElement('div', 'cannon-barrel');
 elementsById.set('.cannon-barrel', cannonBarrel);
+const healthFill = new MockElement('div', 'health-fill');
+elementsById.set('.health-fill', healthFill);
 
 // Global window & document
 global.window = new EventEmitter();
@@ -98,7 +224,23 @@ global.document = {
     getElementById: (id) => getOrCreateElement(id),
     querySelector: (sel) => {
         if (sel === '.cannon-barrel') return cannonBarrel;
+        if (sel === '.health-fill') return healthFill;
+        for (const el of elementsById.values()) {
+            if (el.matchesSelector && el.matchesSelector(sel)) return el;
+            if (el.querySelector) {
+                const found = el.querySelector(sel);
+                if (found) return found;
+            }
+        }
         return null;
+    },
+    querySelectorAll: (sel) => {
+        const list = [];
+        for (const el of elementsById.values()) {
+            if (el.matchesSelector && el.matchesSelector(sel)) list.push(el);
+            if (el.querySelectorAll) list.push(...el.querySelectorAll(sel));
+        }
+        return list;
     },
     createElement: (tag) => new MockElement(tag),
     createElementNS: (ns, tag) => new MockElement(tag),
@@ -359,8 +501,75 @@ async function runAutomatedTests() {
     }
     console.log('✅ Virtual keyboard letter case alignment verified: [Q (sub) / q (main)] correctly paired!');
 
+    console.log('\n--- 15. Testing Duplicate Letter Priority Target Selection ---');
+    game.startGame();
+    const highThreatTarget = { id: 'dup-high', char: 'z', x: 200, y: 380, speed: 50, element: new MockElement('div') };
+    const lowThreatTarget  = { id: 'dup-low',  char: 'z', x: 200, y: 120, speed: 50, element: new MockElement('div') };
+    game.targets.push(lowThreatTarget, highThreatTarget);
+
+    // Keystroke 'z' should eliminate highThreatTarget first
+    game.handleKeyInput('z');
+    if (game.targets.some(t => t.id === 'dup-high')) {
+        throw new Error('High threat duplicate target was not prioritized for destruction');
+    }
+    if (!game.targets.some(t => t.id === 'dup-low')) {
+        throw new Error('Low threat duplicate target was erroneously destroyed');
+    }
+    console.log('✅ Duplicate letter prioritization verified: closest threat target [z @ 380px] eliminated first!');
+
+    console.log('\n--- 16. Testing Zero-Bomb EMP Safe Guard ---');
+    game.bombs = 0;
+    const safeTarget = { id: 'safe-t', char: 'w', x: 100, y: 100, speed: 40, element: new MockElement('div') };
+    game.targets.push(safeTarget);
+    game.triggerEmpBomb();
+    if (game.bombs !== 0) throw new Error('Bombs should remain 0');
+    if (!game.targets.some(t => t.id === 'safe-t')) {
+        throw new Error('Target was cleared even though bombs was 0');
+    }
+    console.log('✅ Zero-Bomb guard verified: EMP safely rejected when 0 bombs available.');
+
+    console.log('\n--- 17. Testing Schema v2 Leaderboard & duration_s Persistence ---');
+    const v2Payload = `name=CYBER_VIP&score=9999&maxCombo=88&accuracy=99&duration_s=42`;
+    const v2Req = new EventEmitter();
+    v2Req.method = 'POST';
+    v2Req.url = '/api/score';
+    v2Req.headers = {
+        host: 'localhost:3000',
+        'content-type': 'application/x-www-form-urlencoded',
+        'x-forwarded-for': '192.168.1.100'
+    };
+    const v2Res = new EventEmitter();
+    v2Res.body = '';
+    v2Res.writeHead = (code, headers) => { v2Res.statusCode = code; };
+    v2Res.end = (chunk) => {
+        if (chunk) v2Res.body += chunk;
+        v2Res.emit('done');
+    };
+    const v2Promise = new Promise(resolve => v2Res.on('done', resolve));
+    listener(v2Req, v2Res);
+    v2Req.emit('data', Buffer.from(v2Payload));
+    v2Req.emit('end');
+    await v2Promise;
+
+    if (v2Res.statusCode !== 200) throw new Error(`v2 score submission failed with ${v2Res.statusCode}`);
+    const updatedScores = server.loadScores();
+    const storedRecord = updatedScores.find(r => r.name === 'CYBER_VIP' && r.score === 9999);
+    if (!storedRecord) throw new Error('Schema v2 record was not persisted');
+    if (storedRecord.duration_s !== 42) throw new Error(`Expected duration_s=42, got ${storedRecord.duration_s}`);
+    if (!storedRecord.played_at) throw new Error('Expected played_at timestamp in record');
+    console.log(`✅ Schema v2 record verified: name=${storedRecord.name}, duration_s=${storedRecord.duration_s}s, played_at=${storedRecord.played_at}`);
+
+    console.log('\n--- 18. Testing Real DOM Traversal (querySelector & querySelectorAll) ---');
+    if (!game.spaceKeyElement) throw new Error('Space key element not bound');
+    const mainKeySpan = game.spaceKeyElement.querySelector('.vkey-main');
+    if (!mainKeySpan) throw new Error('Real querySelector failed to find .vkey-main inside spaceKeyElement');
+    
+    const allVKeys = game.virtualKeyboard.querySelectorAll('.vkey');
+    if (allVKeys.length === 0) throw new Error('Real querySelectorAll failed to find .vkey items in virtualKeyboard');
+    console.log(`✅ Real DOM tree traversal verified: querySelector found [${mainKeySpan.textContent}], querySelectorAll found ${allVKeys.length} virtual keys!`);
+
     console.log('\n==============================================');
-    console.log('🎉 ALL 14 AUTOMATED TEST SUITES PASSED 100%!');
+    console.log('🎉 ALL 18 AUTOMATED TEST SUITES PASSED 100%!');
     console.log('==============================================\n');
     process.exit(0);
 }

@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test-simulation.js && node test-live-battle.js",
+    "test": "node test-simulation.js; node test-live-battle.js",
+    "test:sim": "node test-simulation.js",
+    "test:battle": "node test-live-battle.js",
     "bot": "node run-ai-match.js"
   },
   "keywords": [

@@ -144,32 +144,28 @@ async function playTournamentMatch() {
     console.log(`  - Combat Accuracy: ${accuracy}%`);
     console.log('-------------------------------------------------------------');
 
-    // Automatically persist record to scores.json
-    const scoresFile = path.join(__dirname, 'scores.json');
-    let scores = [];
-    try {
-        if (fs.existsSync(scoresFile)) {
-            scores = JSON.parse(fs.readFileSync(scoresFile, 'utf-8'));
-        }
-    } catch (e) {
-        scores = [];
-    }
+    // Automatically persist record to scores.json using server storage API
+    const server = require('./server.js');
+    let scores = server.loadScores ? server.loadScores() : [];
 
+    const matchDurationSeconds = Math.max(1, Math.round((ticks * 60) / 1000));
     const newRecord = {
         id: `ai-${Date.now()}`,
         name: selectedModel.name,
         score: game.score,
         maxCombo: game.maxCombo,
         accuracy: accuracy,
-        date: new Date().toISOString().split('T')[0]
+        duration_s: matchDurationSeconds,
+        played_at: new Date().toISOString()
     };
 
     scores.push(newRecord);
     scores.sort((a, b) => b.score - a.score || b.accuracy - a.accuracy);
-    try {
-        fs.writeFileSync(scoresFile, JSON.stringify(scores, null, 2), 'utf-8');
-    } catch (e) {
-        // Fallback gracefully if filesystem write permission is restricted in sandbox
+    if (scores.length > 100) {
+        scores = scores.slice(0, 100);
+    }
+    if (server.saveScores) {
+        server.saveScores(scores);
     }
 
     const rank = scores.findIndex(s => s.id === newRecord.id) + 1;

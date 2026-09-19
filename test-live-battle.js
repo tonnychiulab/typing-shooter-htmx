@@ -13,6 +13,13 @@ class MockElement extends EventEmitter {
             classes: new Set(),
             add: (c) => this.classList.classes.add(c),
             remove: (c) => this.classList.classes.delete(c),
+            toggle: (c, force) => {
+                const has = this.classList.classes.has(c);
+                const shouldAdd = force !== undefined ? force : !has;
+                if (shouldAdd) this.classList.classes.add(c);
+                else this.classList.classes.delete(c);
+                return shouldAdd;
+            },
             contains: (c) => this.classList.classes.has(c)
         };
         this.style = {};

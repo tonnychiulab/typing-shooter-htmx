@@ -1,13 +1,88 @@
 # 📋 工作紀錄與開發日誌 (Work Log)
 
 - **專案名稱**：Typing Defender (HTMX + Cyber AI Pilot)
-- **開發日期**：2026-09-18
-- **開發者**：tonnychiulab × Antigravity CLI (`agy`) [Gemini 3.8 Flash]
-- **當前版本**：v1.2.0
+- **開發日期**：2026-09-18（初版）/ 2026-09-19（重構優化）
+- **開發者**：tonnychiulab × Antigravity CLI (`agy`) [Claude Sonnet 4.6 Thinking]
+- **當前版本**：v1.4.0
 - **儲存庫**：`https://github.com/tonnychiulab/typing-shooter-htmx.git` (分支: `main`)
 - **線上體驗**：[GitHub Pages 部署站點](https://tonnychiulab.github.io/typing-shooter-htmx/)
 
 ---
+
+## 🛠️ 2026-09-19 五階段架構升級與安全重構 (v1.3.1 → v1.4.0)
+
+| Phase | 類別 | 項目 | 狀態 |
+|-------|------|------|------|
+| **P1** | 效能優化 | **SpawnTimer 遞迴陷阱修復**：改為 `setTimeout` 自排程替代 `setInterval` + `clearInterval` 循環重建，消除高分局計時器頻繁重建的 CPU 開銷。 | ✅ |
+| **P2** | 安全防護 | **Server 安全與 CSP 強化**：`recentSubmissions` 增加定時 TTL 記憶體清理；補齊 PWA 與模組白名單；加入嚴格 CSP 與安全 Headers。 | ✅ |
+| **P3** | 資料架構 | **`scores.json` Schema v2 升級**：包裹格式 `{ version: 2, updated_at, records }`，內建雙向平滑遷移；新增 `duration_s`（時長）與 `played_at`（ISO timestamp）。 | ✅ |
+| **P4** | 測試環境 | **測試環境與邊界案例強化**：升級 `MockElement` 支援層級 DOM 樹與 innerHTML 標籤解析，測試擴充至 **18 項全數 100% 通過**。 | ✅ |
+| **P5** | 系統架構 | **`game.js` 巨型 Class 模組化拆分**：原 1,690 行單檔依 SRP 拆分為 6 個子模組（`constants`, `audio`, `a11y`, `ai-pilot`, `static-host`, `engine`），主入口 `game.js` 精簡至 60 行，透過 Facade 模式與 Proxy 保持 100% 向後相容。 | ✅ |
+
+---
+
+## 🛠️ 2026-09-19 清理與修正 (v1.3.0 → v1.3.1)
+
+| 代號 | 類別 | 項目 | 狀態 |
+|------|------|------|------|
+| E1 | 架構清理 | 刪除冗余 `game/` ES Module 目錄（7 個 `.js` 檔案），確立 `game.js` 為唯一真相（瀏覽器 + 測試均以此為準） | ✅ |
+| E2 | Bug Fix | AI 人格 EMP 觸發邏輯差異化：ROOKIE（過載 ≥6 / 距底 110px）、VETERAN（過載 ≥4 / 距底 130px）、GOD（過載 ≥2 / 距底 180px 零容錯），從寫死數值改為讀取各人格 `empCrowdThreshold` / `empDangerZone` 參數 | ✅ |
+| E3 | 文件同步 | 更新 `docs/SDD.md` AI 人格參數表，使文件 = 程式碼 = 測試三方一致 | ✅ |
+
+---
+
+## 🛠️ 2026-09-19 重構優化紀錄 (v1.2.0 → v1.3.0)
+
+### 本次改善項目清單（全部通過 14 項自動化測試）
+
+| 代號 | 類別 | 項目 | 狀態 |
+|------|------|------|------|
+| B1 | 遊戲體驗 | 動態 spawn interval：分數越高生成越密（1400ms → 600ms） | ✅ |
+| B2 | 遊戲體驗 | 字元難度計分：符號 2.0x / 大寫+數字 1.5x / 小寫 1.0x | ✅ |
+| C1 | Bug Fix | 靜態主機偵測邏輯修正（移除錯誤的 `port === ''` 判斷） | ✅ |
+| C2 | 設定 | `scores.json` 加入 `.gitignore`，防止玩家數據入 git | ✅ |
+| C3 | 效能 | 血條改用 `style.width` 直接操作 + CSS transition，不再重建 DOM | ✅ |
+| D1 | 工具 | `npm test` 改用 `;` 串接（兩個測試都跑完再報告），新增 `test:sim` / `test:battle` 獨立腳本 | ✅ |
+| A | 架構 | ES Module 模組化架構（`game/` 目錄）：audio / ai-pilot / keyboard / a11y / htmx-bridge / static-host / engine | ✅ |
+
+### B1 動態難度技術細節
+```
+interval = max(600, 1400 - floor(score / 60) * 40)  [ms]
+```
+- 初始：1400ms（每 1.4 秒生成一個字母）
+- 每累積 60 分（=一枚核彈充能量）縮短 40ms
+- 最快：600ms（需要約 score 1200 的高分局才達到）
+- 每次命中後立即重新計算（讓難度曲線即時響應）
+
+### B2 字元難度計分技術細節
+```
+gainedScore = round((10 + combo × 2.5) × difficulty_multiplier)
+```
+| 字元類型 | 倍率 | 範例（combo=5） |
+|---------|------|----------------|
+| 小寫字母（a-z） | 1.0x | (10 + 12.5) × 1.0 = **23 分** |
+| 數字 / 大寫（0-9, A-Z） | 1.5x | (10 + 12.5) × 1.5 = **34 分** |
+| 符號（!@#... 等） | 2.0x | (10 + 12.5) × 2.0 = **45 分** |
+
+### 模組化架構說明
+新建 `game/` 目錄，為長期可維護性奠基：
+```
+game/
+├── constants.js    # 全域常數（CHAR_SETS、KEYBOARD_LAYOUT 等）
+├── audio.js        # AudioEngine（Web Audio API 音效）
+├── ai-pilot.js     # AIPilot（威脅評估、決策循環）
+├── keyboard.js     # VirtualKeyboard（鍵盤構建、AI Gaze）
+├── a11y.js         # A11yManager（無障礙模式）
+├── htmx-bridge.js  # HtmxBridge（HTMX 事件橋接）
+├── static-host.js  # 靜態主機 fallback（C1 已修正）
+└── engine.js       # TypingGame 主引擎（整合所有子模組）
+```
+- 瀏覽器透過 `game.js`（原始 CJS 格式，含本次所有改善）運行
+- `game/` 模組為 ES Module 重構版本，供未來進一步拆分使用
+- 測試腳本繼續 `require('./game.js')` 維持相容性
+
+---
+
 
 ## 🎯 今日工作目標概述
 

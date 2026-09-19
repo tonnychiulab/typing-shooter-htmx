@@ -1,58 +1,69 @@
-[
-  {
-    "id": "pilot-1",
-    "name": "NEO_CYPHER",
-    "score": 3850,
-    "maxCombo": 42,
-    "accuracy": 98,
-    "date": "2026-09-15"
-  },
-  {
-    "id": "pilot-2",
-    "name": "GHOST_01",
-    "score": 2980,
-    "maxCombo": 31,
-    "accuracy": 95,
-    "date": "2026-09-16"
-  },
-  {
-    "id": "pilot-3",
-    "name": "TRINITY",
-    "score": 2420,
-    "maxCombo": 28,
-    "accuracy": 92,
-    "date": "2026-09-17"
-  },
-  {
-    "id": "pilot-4",
-    "name": "ZERO_COOL",
-    "score": 1890,
-    "maxCombo": 22,
-    "accuracy": 89,
-    "date": "2026-09-17"
-  },
-  {
-    "id": "pilot-5",
-    "name": "ACID_BURN",
-    "score": 1450,
-    "maxCombo": 18,
-    "accuracy": 86,
-    "date": "2026-09-18"
-  },
-  {
-    "id": "rec-1789739053849",
-    "name": "AI_AGI_OVERLORD",
-    "score": 12,
-    "maxCombo": 1,
-    "accuracy": 100,
-    "date": "2026-09-18"
-  },
-  {
-    "id": "rec-1789739371607",
-    "name": "AI_AGI_OVERLORD",
-    "score": 12,
-    "maxCombo": 1,
-    "accuracy": 100,
-    "date": "2026-09-18"
-  }
-]
+{
+  "version": 2,
+  "updated_at": "2026-09-19T18:40:00.000Z",
+  "records": [
+    {
+      "id": "pilot-1",
+      "name": "NEO_CYPHER",
+      "score": 3850,
+      "maxCombo": 42,
+      "accuracy": 98,
+      "duration_s": 187,
+      "played_at": "2026-09-15T14:22:10.000Z"
+    },
+    {
+      "id": "pilot-2",
+      "name": "GHOST_01",
+      "score": 2980,
+      "maxCombo": 31,
+      "accuracy": 95,
+      "duration_s": 152,
+      "played_at": "2026-09-16T09:45:33.000Z"
+    },
+    {
+      "id": "pilot-3",
+      "name": "TRINITY",
+      "score": 2420,
+      "maxCombo": 28,
+      "accuracy": 92,
+      "duration_s": 124,
+      "played_at": "2026-09-17T18:01:05.000Z"
+    },
+    {
+      "id": "pilot-4",
+      "name": "ZERO_COOL",
+      "score": 1890,
+      "maxCombo": 22,
+      "accuracy": 89,
+      "duration_s": 98,
+      "played_at": "2026-09-17T20:33:47.000Z"
+    },
+    {
+      "id": "pilot-5",
+      "name": "ACID_BURN",
+      "score": 1450,
+      "maxCombo": 18,
+      "accuracy": 86,
+      "duration_s": 76,
+      "played_at": "2026-09-18T11:17:22.000Z"
+    },
+    {
+      "id": "rec-1789739053849",
+      "name": "AI_AGI_OVERLORD",
+      "score": 12,
+      "maxCombo": 1,
+      "accuracy": 100,
+      "duration_s": 15,
+      "played_at": "2026-09-18T00:00:00.000Z"
+    },
+    {
+      "id": "rec-1789739371607",
+      "name": "AI_AGI_OVERLORD",
+      "score": 12,
+      "maxCombo": 1,
+      "accuracy": 100,
+      "duration_s": 15,
+      "played_at": "2026-09-18T00:00:00.000Z"
+    }
+  ]
+}
