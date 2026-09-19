@@ -1,33 +1,29 @@
-// ==========================================
-// TYPING SHOOTER - GAME CORE ENGINE
-// 遊戲主狀態機、物理迴圈、雷射動畫與作戰排程
-// ==========================================
+(function () {
+    const {
+        CHAR_SETS,
+        DIFFICULTY_MULTIPLIER,
+        getCharDifficulty,
+        ALL_CHARS,
+        SYMBOL_ANNOTATIONS,
+        AI_MODELS,
+        KEYBOARD_LAYOUT
+    } = typeof require !== 'undefined'
+        ? require('./constants.js')
+        : (window.TypingGameConstants || {});
 
-const {
-    CHAR_SETS,
-    DIFFICULTY_MULTIPLIER,
-    getCharDifficulty,
-    ALL_CHARS,
-    SYMBOL_ANNOTATIONS,
-    AI_MODELS,
-    KEYBOARD_LAYOUT
-} = typeof require !== 'undefined'
-    ? require('./constants.js')
-    : (window.TypingGameConstants || {});
+    const { AudioEngine } = typeof require !== 'undefined'
+        ? require('./audio.js')
+        : (window.TypingGameAudio || {});
 
-const { AudioEngine } = typeof require !== 'undefined'
-    ? require('./audio.js')
-    : (window.TypingGameAudio || {});
+    const { A11yManager } = typeof require !== 'undefined'
+        ? require('./a11y.js')
+        : (window.TypingGameA11y || {});
 
-const { A11yManager } = typeof require !== 'undefined'
-    ? require('./a11y.js')
-    : (window.TypingGameA11y || {});
+    const { AIPilot } = typeof require !== 'undefined'
+        ? require('./ai-pilot.js')
+        : (window.TypingGamePilot || {});
 
-const { AIPilot } = typeof require !== 'undefined'
-    ? require('./ai-pilot.js')
-    : (window.TypingGamePilot || {});
-
-class TypingGame {
+    class TypingGame {
     constructor() {
         this.battlefield = document.getElementById('battlefield');
         this.targetsContainer = document.getElementById('targets-container');
@@ -807,11 +803,14 @@ class TypingGame {
     }
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { TypingGame };
-}
-if (typeof window !== 'undefined') {
-    window.TypingGameEngine = { TypingGame };
-    window.TypingGame = TypingGame;
-}
+    const exportsObj = { TypingGame };
+
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = exportsObj;
+    }
+    if (typeof window !== 'undefined') {
+        window.TypingGameEngine = exportsObj;
+        window.TypingGame = TypingGame;
+    }
+})();
 
